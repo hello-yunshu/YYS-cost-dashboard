@@ -33,6 +33,7 @@ fi
 APP_DIR="$SCRIPT_DIR/app"
 DATA_DIR="$SCRIPT_DIR/data"
 UPLOADS_DIR="$SCRIPT_DIR/uploads"
+LOGS_DIR="$SCRIPT_DIR/logs"
 
 if [ ! -f "$APP_DIR/server.bundle.js" ]; then
     echo "[ERROR] Application file not found: $APP_DIR/server.bundle.js"
@@ -40,13 +41,13 @@ if [ ! -f "$APP_DIR/server.bundle.js" ]; then
     exit 1
 fi
 
-mkdir -p "$DATA_DIR" "$UPLOADS_DIR"
+mkdir -p "$DATA_DIR" "$UPLOADS_DIR" "$LOGS_DIR"
 
 export DB_MODE=sqljs
 export DB_PATH="$DATA_DIR/cost_dashboard.db"
 export UPLOADS_DIR="$UPLOADS_DIR"
 export NODE_ENV=production
-export PORT=3113
+export PORT="${PORT:-3113}"
 
 echo
 echo "[INFO] Platform: $PLATFORM"

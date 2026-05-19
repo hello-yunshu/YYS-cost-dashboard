@@ -9,23 +9,27 @@ echo    Cost Dashboard
 echo ============================================
 echo.
 
-netstat -ano | findstr ":3113 " | findstr "LISTENING" >nul 2>&1
+if "%PORT%"=="" set "PORT=3113"
+
+netstat -ano | findstr ":%PORT% " | findstr "LISTENING" >nul 2>&1
 if %errorlevel%==0 (
-    echo [ERROR] Port 3113 is already in use. Please stop the existing process first.
+    echo [ERROR] Port %PORT% is already in use. Please stop the existing process first.
     echo         Run stop.bat to stop the running instance.
     pause
     exit /b 1
 )
 
-netstat -ano | findstr ":3114 " | findstr "LISTENING" >nul 2>&1
+set /a STOP_PORT=%PORT%+1
+netstat -ano | findstr ":%STOP_PORT% " | findstr "LISTENING" >nul 2>&1
 if %errorlevel%==0 (
-    echo [WARNING] Port 3114 is in use.
+    echo [WARNING] Port %STOP_PORT% is in use.
 )
 
 set "SCRIPT_DIR=%~dp0"
 set "APP_DIR=%SCRIPT_DIR%app"
 set "DATA_DIR=%SCRIPT_DIR%data"
 set "UPLOADS_DIR=%SCRIPT_DIR%uploads"
+set "LOGS_DIR=%SCRIPT_DIR%logs"
 set "NODE_DIR=%SCRIPT_DIR%node\win-x64"
 
 if not exist "%NODE_DIR%\node.exe" (
@@ -44,12 +48,12 @@ if not exist "%APP_DIR%\server.bundle.js" (
 
 if not exist "%DATA_DIR%" mkdir "%DATA_DIR%"
 if not exist "%UPLOADS_DIR%" mkdir "%UPLOADS_DIR%"
+if not exist "%LOGS_DIR%" mkdir "%LOGS_DIR%"
 
 set DB_MODE=sqljs
 set DB_PATH=%DATA_DIR%\cost_dashboard.db
 set UPLOADS_DIR=%UPLOADS_DIR%
 set NODE_ENV=production
-set PORT=3113
 
 echo.
 echo [INFO] Starting Cost Dashboard...

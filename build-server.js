@@ -12,7 +12,6 @@ esbuild.build({
   format: 'esm',
   target: 'node24',
   outfile: path.resolve(__dirname, 'dist-portable/app/server.bundle.js'),
-  external: ['better-sqlite3'],
   minify: false,
   loader: {
     '.wasm': 'copy',

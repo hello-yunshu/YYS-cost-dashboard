@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("\u4E91\u4E91\u8212 co.")]
 [assembly: AssemblyProduct("Cost Dashboard")]
-[assembly: AssemblyCopyright("Copyright (C) 2024")]
+[assembly: AssemblyCopyright("Copyright (C) __COPYRIGHT_YEAR__ 云云舒 co.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

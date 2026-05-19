@@ -92,18 +92,31 @@ function extractArchive(archivePath, extractDir, ext) {
   throw new Error(`Unsupported archive type: ${ext}`);
 }
 
-function downloadFile(url, dest) {
+const MAX_REDIRECTS = 5;
+
+function downloadFile(url, dest, redirectCount = 0) {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(dest)) {
       console.log(`  Already downloaded: ${path.basename(dest)}`);
       resolve();
       return;
     }
+    if (redirectCount > MAX_REDIRECTS) {
+      reject(new Error(`Too many redirects (>${MAX_REDIRECTS}) while downloading ${url}`));
+      return;
+    }
     console.log(`  Downloading: ${url}`);
     const file = createWriteStream(dest);
     https.get(url, (response) => {
       if (response.statusCode === 301 || response.statusCode === 302) {
-        downloadFile(response.headers.location, dest).then(resolve).catch(reject);
+        file.close();
+        const redirectUrl = response.headers.location;
+        if (!redirectUrl) {
+          try { fs.rmSync(dest, { force: true }); } catch {}
+          reject(new Error(`Redirect with no Location header from ${url}`));
+          return;
+        }
+        downloadFile(redirectUrl, dest, redirectCount + 1).then(resolve).catch(reject);
         return;
       }
       response.pipe(file);
@@ -112,7 +125,7 @@ function downloadFile(url, dest) {
         resolve();
       });
     }).on('error', (err) => {
-      fs.unlinkSync(dest);
+      try { fs.rmSync(dest, { force: true }); } catch {}
       reject(err);
     });
   });

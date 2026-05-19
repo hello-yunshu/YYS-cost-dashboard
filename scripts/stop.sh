@@ -1,16 +1,19 @@
 #!/bin/bash
 
 echo "============================================"
-echo "   Stopping MTC Cost Dashboard"
+echo "   Stopping Cost Dashboard"
 echo "============================================"
 echo
 
+PORT="${PORT:-3113}"
+STOP_PORT=$((PORT + 1))
+
 FOUND=0
 
-PIDS=$(lsof -ti :3113 2>/dev/null)
+PIDS=$(lsof -ti :$PORT 2>/dev/null)
 if [ -n "$PIDS" ]; then
     for PID in $PIDS; do
-        echo "[INFO] Found process on port 3113, PID: $PID"
+        echo "[INFO] Found process on port $PORT, PID: $PID"
         kill -9 "$PID" 2>/dev/null
         if [ $? -eq 0 ]; then
             echo "[INFO] Process $PID terminated successfully."
@@ -21,10 +24,10 @@ if [ -n "$PIDS" ]; then
     done
 fi
 
-PIDS=$(lsof -ti :3114 2>/dev/null)
+PIDS=$(lsof -ti :$STOP_PORT 2>/dev/null)
 if [ -n "$PIDS" ]; then
     for PID in $PIDS; do
-        echo "[INFO] Found process on port 3114, PID: $PID"
+        echo "[INFO] Found process on port $STOP_PORT, PID: $PID"
         kill -9 "$PID" 2>/dev/null
         if [ $? -eq 0 ]; then
             echo "[INFO] Process $PID terminated successfully."
@@ -36,7 +39,7 @@ if [ -n "$PIDS" ]; then
 fi
 
 if [ "$FOUND" -eq 0 ]; then
-    echo "[INFO] No process found on port 3113 or 3114."
+    echo "[INFO] No process found on port $PORT or $STOP_PORT."
 fi
 
 echo
