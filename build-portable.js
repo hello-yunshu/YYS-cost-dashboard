@@ -150,6 +150,11 @@ function copyInitialDataIfMissing() {
   const sourceDb = path.resolve(ROOT, 'data', 'cost_dashboard.db');
   const portableDb = path.resolve(DIST_PORTABLE, 'data', 'cost_dashboard.db');
 
+  if (fs.existsSync(portableDb)) {
+    console.log('  Existing portable database found, preserving:', portableDb);
+    return;
+  }
+
   if (fs.existsSync(sourceDb)) {
     fs.copyFileSync(sourceDb, portableDb);
     console.log('  Copied existing database to portable data:', portableDb);
@@ -252,7 +257,6 @@ async function main() {
   run('node build-server.js');
 
   console.log('\n[Step 3/10] Creating directory structure...');
-  if (fs.existsSync(DIST_PORTABLE)) fs.rmSync(DIST_PORTABLE, { recursive: true });
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'app'), { recursive: true });
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'data'), { recursive: true });
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'uploads'), { recursive: true });
