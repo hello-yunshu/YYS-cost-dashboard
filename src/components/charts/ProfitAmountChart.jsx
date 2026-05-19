@@ -5,7 +5,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor, getBranchColorLight } from '../../utils/constants';
 
 export default function ProfitAmountChart({ data = [], onBranchClick }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
   const chartRef = useRef(null);
 
@@ -61,7 +61,7 @@ export default function ProfitAmountChart({ data = [], onBranchClick }) {
       legend: {
         top: 0,
         right: 0,
-        textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 12 },
+        textStyle: { color: '#64748b', fontSize: 12 },
         itemWidth: 12,
         itemHeight: 8,
         itemGap: 16,
@@ -88,7 +88,7 @@ export default function ProfitAmountChart({ data = [], onBranchClick }) {
       xAxis: {
         type: 'value',
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           formatter: (v) => {
             const abs = Math.abs(v);
@@ -98,7 +98,7 @@ export default function ProfitAmountChart({ data = [], onBranchClick }) {
           },
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#1e293b' : '#e2e8f0', type: 'dashed' },
+          lineStyle: { color: isDark ? '#334155' : '#e2e8f0', type: 'dashed' },
         },
         axisLine: { show: false },
         axisTick: { show: false },
@@ -106,10 +106,10 @@ export default function ProfitAmountChart({ data = [], onBranchClick }) {
       yAxis: {
         type: 'category',
         data: branches,
-        axisLine: { lineStyle: { color: isDark ? '#334155' : '#cbd5e1' } },
+        axisLine: { lineStyle: { color: isDark ? '#475569' : '#cbd5e1' } },
         axisTick: { show: false },
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           width: 70,
           overflow: 'truncate',

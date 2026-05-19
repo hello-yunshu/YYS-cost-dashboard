@@ -5,7 +5,7 @@ import { getBranchColor } from '../../utils/constants';
 import { getCategoryAxisLabel, getChartGrid } from './axisLayout';
 
 export default function BranchTrendChart({ branchTrends = [], valueKey = 'currentProfitRate', valueFormatter }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
 
   const option = useMemo(() => {
@@ -56,20 +56,20 @@ export default function BranchTrendChart({ branchTrends = [], valueKey = 'curren
       legend: {
         top: 0,
         right: 0,
-        textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 },
+        textStyle: { color: '#64748b', fontSize: 11 },
         itemWidth: 14,
         itemHeight: 3,
         itemGap: 12,
         type: 'scroll',
         pageIconColor: isDark ? '#475569' : '#64748b',
-        pageIconInactiveColor: isDark ? '#1e293b' : '#cbd5e1',
+        pageIconInactiveColor: isDark ? '#334155' : '#cbd5e1',
         pageTextStyle: { color: isDark ? '#64748b' : '#475569' },
       },
       grid: getChartGrid(months.length, { left: 8, right: 8, top: 32, bottom: 8, compactBottom: 24, crowdedAt: 7 }),
       xAxis: {
         type: 'category',
         data: months,
-        axisLine: { lineStyle: { color: isDark ? '#334155' : '#cbd5e1' } },
+        axisLine: { lineStyle: { color: isDark ? '#475569' : '#cbd5e1' } },
         axisTick: { show: false },
         axisLabel: getCategoryAxisLabel(isDark, months.length, { rotate: 30, width: 42, crowdedAt: 7 }),
         boundaryGap: false,
@@ -77,7 +77,7 @@ export default function BranchTrendChart({ branchTrends = [], valueKey = 'curren
       yAxis: {
         type: 'value',
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           formatter: (v) => {
             if (valueKey.includes('Rate') || valueKey === 'collectionRate' || valueKey === 'measurementConfirmRate' || valueKey === 'valueConfirmRate') {
@@ -88,7 +88,7 @@ export default function BranchTrendChart({ branchTrends = [], valueKey = 'curren
           },
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#1e293b' : '#e2e8f0', type: 'dashed' },
+          lineStyle: { color: isDark ? '#334155' : '#e2e8f0', type: 'dashed' },
         },
         axisLine: { show: false },
         axisTick: { show: false },

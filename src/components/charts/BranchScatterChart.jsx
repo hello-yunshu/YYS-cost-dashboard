@@ -4,7 +4,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor, getBranchColorLight } from '../../utils/constants';
 
 export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0.05 }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
 
   const option = useMemo(() => {
@@ -59,13 +59,13 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
       },
       legend: {
         bottom: 0,
-        textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 },
+        textStyle: { color: '#64748b', fontSize: 11 },
         itemWidth: 10,
         itemHeight: 10,
         itemGap: 12,
         type: 'scroll',
         pageIconColor: isDark ? '#475569' : '#64748b',
-        pageIconInactiveColor: isDark ? '#1e293b' : '#cbd5e1',
+        pageIconInactiveColor: isDark ? '#334155' : '#cbd5e1',
         pageTextStyle: { color: isDark ? '#64748b' : '#475569' },
       },
       grid: {
@@ -80,9 +80,9 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
         name: '自营产值',
         nameLocation: 'middle',
         nameGap: 28,
-        nameTextStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 },
+        nameTextStyle: { color: '#64748b', fontSize: 11 },
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           formatter: (v) => {
             if (Math.abs(v) >= 10000) return `${(v / 10000).toFixed(0)}亿`;
@@ -90,7 +90,7 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
           },
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#1e293b' : '#e2e8f0', type: 'dashed' },
+          lineStyle: { color: isDark ? '#334155' : '#e2e8f0', type: 'dashed' },
         },
         axisLine: { show: false },
         axisTick: { show: false },
@@ -100,14 +100,14 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
         name: '利润率',
         nameLocation: 'middle',
         nameGap: 36,
-        nameTextStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 },
+        nameTextStyle: { color: '#64748b', fontSize: 11 },
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           formatter: (v) => `${v.toFixed(0)}%`,
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#1e293b' : '#e2e8f0', type: 'dashed' },
+          lineStyle: { color: isDark ? '#334155' : '#e2e8f0', type: 'dashed' },
         },
         axisLine: { show: false },
         axisTick: { show: false },
@@ -123,7 +123,7 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
             formatter: '{b}',
             position: 'right',
             fontSize: 10,
-            color: isDark ? '#94a3b8' : '#64748b',
+            color: '#64748b',
           },
           emphasis: {
             itemStyle: {
@@ -147,7 +147,7 @@ export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0
                 label: {
                   formatter: `风险线 ${(riskThreshold * 100).toFixed(0)}%`,
                   position: 'insideStartTop',
-                  color: isDark ? '#94a3b8' : '#64748b',
+                  color: '#64748b',
                   fontSize: 10,
                 },
               },

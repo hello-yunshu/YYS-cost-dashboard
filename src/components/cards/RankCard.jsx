@@ -17,7 +17,7 @@ export default function RankCard({ rank, name, value, unit, subtitle }) {
         : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'
     )}>
       <div className={clsx(
-        'flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
+        'shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
         isTop3
           ? `bg-gradient-to-br ${medalColors[rank]} shadow-md`
           : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
@@ -30,7 +30,7 @@ export default function RankCard({ rank, name, value, unit, subtitle }) {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
         )}
       </div>
-      <div className="flex items-baseline gap-1 flex-shrink-0">
+      <div className="flex items-baseline gap-1 shrink-0">
         <span className={clsx(
           'text-sm font-display font-bold',
           isTop3 ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'

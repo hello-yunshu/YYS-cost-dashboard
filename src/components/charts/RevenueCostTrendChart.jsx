@@ -5,7 +5,7 @@ import { BRANCH_COLORS } from '../../utils/constants';
 import { getCategoryAxisLabel, getChartGrid } from './axisLayout';
 
 export default function RevenueCostTrendChart({ monthlyData = [] }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
 
   const option = useMemo(() => {
@@ -43,7 +43,7 @@ export default function RevenueCostTrendChart({ monthlyData = [] }) {
       legend: {
         top: 0,
         right: 0,
-        textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 12 },
+        textStyle: { color: '#64748b', fontSize: 12 },
         itemWidth: 16,
         itemHeight: 3,
         itemGap: 16,
@@ -52,14 +52,14 @@ export default function RevenueCostTrendChart({ monthlyData = [] }) {
       xAxis: {
         type: 'category',
         data: months,
-        axisLine: { lineStyle: { color: isDark ? '#334155' : '#cbd5e1' } },
+        axisLine: { lineStyle: { color: isDark ? '#475569' : '#cbd5e1' } },
         axisTick: { show: false },
         axisLabel: getCategoryAxisLabel(isDark, months.length, { rotate: 30, width: 42, crowdedAt: 7 }),
       },
       yAxis: {
         type: 'value',
         axisLabel: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
           formatter: (v) => {
             if (Math.abs(v) >= 10000) return `${(v / 10000).toFixed(0)}亿`;
@@ -67,7 +67,7 @@ export default function RevenueCostTrendChart({ monthlyData = [] }) {
           },
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#1e293b' : '#e2e8f0', type: 'dashed' },
+          lineStyle: { color: isDark ? '#334155' : '#e2e8f0', type: 'dashed' },
         },
         axisLine: { show: false },
         axisTick: { show: false },

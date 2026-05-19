@@ -4,7 +4,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor } from '../../utils/constants';
 
 export default function CostDonutChart({ data = [] }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
   const [vw, setVw] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 0);
 
@@ -29,9 +29,9 @@ export default function CostDonutChart({ data = [] }) {
       ? `${(total / 10000).toFixed(1)}亿`
       : `${(total / 1000).toFixed(0)}k`;
 
-    const labelColor = isDark ? '#94a3b8' : '#64748b';
+    const labelColor = '#64748b';
     const valueColor = isDark ? '#f1f5f9' : '#0f172a';
-    const baseTextStyle = { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 };
+    const baseTextStyle = { color: '#64748b', fontSize: 11 };
 
     const legendFormatter = (name) => {
       const idx = names.indexOf(name);
@@ -45,7 +45,7 @@ export default function CostDonutChart({ data = [] }) {
     };
 
     const scrollIconColor = isDark ? '#475569' : '#64748b';
-    const scrollInactiveColor = isDark ? '#1e293b' : '#cbd5e1';
+    const scrollInactiveColor = isDark ? '#334155' : '#cbd5e1';
 
     let pieCenter, pieRadius, legendConfig;
 

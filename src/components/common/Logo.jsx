@@ -2,7 +2,7 @@ import { useId } from 'react';
 import useThemeStore from '../../stores/useThemeStore';
 
 export default function Logo({ className = 'w-8 h-8' }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const isDark = resolvedTheme === 'dark';
 
@@ -13,7 +13,7 @@ export default function Logo({ className = 'w-8 h-8' }) {
   const shadowId = `${id}-yun-shadow`;
 
   return (
-    <div className={`${className} flex-shrink-0`}>
+    <div className={`${className} shrink-0`}>
       <svg className="w-full h-full block" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="云">
         <defs>
           <linearGradient id={gradientId} x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">

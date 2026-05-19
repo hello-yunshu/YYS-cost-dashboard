@@ -9,7 +9,7 @@ export function getCategoryAxisLabel(isDark, count, options = {}) {
   const crowded = count >= crowdedAt;
 
   return {
-    color: isDark ? '#94a3b8' : '#64748b',
+    color: '#64748b',
     fontSize,
     rotate: crowded ? rotate : 0,
     interval: forceAll ? 0 : 'auto',

@@ -31,7 +31,7 @@ export default function Header({ onMenuClick }) {
         <div className="flex items-center gap-2 lg:gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-1 -ml-1 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex-shrink-0"
+            className="lg:hidden p-1 -ml-1 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors shrink-0"
           >
             <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -39,7 +39,7 @@ export default function Header({ onMenuClick }) {
           </button>
           <Breadcrumb items={breadcrumbItems} />
         </div>
-        <div className="flex items-center gap-1.5 lg:gap-3 flex-shrink-0 translate-y-[1px] lg:translate-y-0">
+        <div className="flex items-center gap-1.5 lg:gap-3 shrink-0 translate-y-[1px] lg:translate-y-0">
           {isAnnualPage ? <YearSelector /> : <MonthSelector />}
           <ExportReport isAnnualPage={isAnnualPage} />
         </div>

@@ -7,14 +7,6 @@ import config from '../config.js';
 import { getDao } from '../db/index.js';
 import { parseAndValidate, importData, storePreview, getPreview, deletePreview } from '../services/importService.js';
 
-function fixFilename(name) {
-  try {
-    return Buffer.from(name, 'latin1').toString('utf8');
-  } catch {
-    return name;
-  }
-}
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, config.uploads.dir);
@@ -29,6 +21,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: config.uploads.maxSize },
+  defParamCharset: 'utf8',
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (ext === '.xlsx' || ext === '.xls') {
@@ -47,7 +40,7 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       return res.status(400).json({ success: false, message: '请上传文件' });
     }
 
-    const originalname = fixFilename(req.file.originalname);
+    const originalname = req.file.originalname;
 
     const { parsedByMonth, parsed, validation, availableMonths } = await parseAndValidate(req.file.path);
 

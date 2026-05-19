@@ -119,7 +119,7 @@ export default function Sidebar({ mobileOpen, onMobileToggle }) {
       )}
 
       <div className={clsx(
-        'fixed inset-y-0 left-0 z-50 w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/50 transform transition-transform duration-300 lg:hidden flex flex-col',
+        'fixed inset-y-0 left-0 z-50 w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700/50 transition-transform duration-300 lg:hidden flex flex-col',
         mobileOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         <div className="flex items-center justify-between h-14 px-4 border-b border-slate-200 dark:border-slate-700/50">

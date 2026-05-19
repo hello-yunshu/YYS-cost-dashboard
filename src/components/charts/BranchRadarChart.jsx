@@ -4,7 +4,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor, getBranchColorLight } from '../../utils/constants';
 
 export default function BranchRadarChart({ monthlyData = [] }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
 
   const option = useMemo(() => {
@@ -64,13 +64,13 @@ export default function BranchRadarChart({ monthlyData = [] }) {
       },
       legend: {
         bottom: '6%',
-        textStyle: { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 },
+        textStyle: { color: '#64748b', fontSize: 11 },
         itemWidth: 12,
         itemHeight: 8,
         itemGap: 12,
         type: 'scroll',
         pageIconColor: isDark ? '#475569' : '#64748b',
-        pageIconInactiveColor: isDark ? '#1e293b' : '#cbd5e1',
+        pageIconInactiveColor: isDark ? '#334155' : '#cbd5e1',
         pageTextStyle: { color: isDark ? '#64748b' : '#475569' },
       },
       radar: {
@@ -79,7 +79,7 @@ export default function BranchRadarChart({ monthlyData = [] }) {
         center: ['50%', '44%'],
         radius: '55%',
         axisName: {
-          color: isDark ? '#94a3b8' : '#64748b',
+          color: '#64748b',
           fontSize: 11,
         },
         splitArea: {
@@ -90,10 +90,10 @@ export default function BranchRadarChart({ monthlyData = [] }) {
           },
         },
         axisLine: {
-          lineStyle: { color: isDark ? '#334155' : '#cbd5e1' },
+          lineStyle: { color: isDark ? '#475569' : '#cbd5e1' },
         },
         splitLine: {
-          lineStyle: { color: isDark ? '#334155' : '#cbd5e1' },
+          lineStyle: { color: isDark ? '#475569' : '#cbd5e1' },
         },
       },
       series: [{
