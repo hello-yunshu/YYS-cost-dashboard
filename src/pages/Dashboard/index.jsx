@@ -17,8 +17,10 @@ import { formatPercent } from '../../utils/format';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { overview, selectedMonth, loading, fetchOverview, fetchMonths } = useDashboardStore();
-  const { getRiskThreshold } = useSettingsStore();
+  const { getRiskThreshold, getAmountUnit } = useSettingsStore();
   const riskThreshold = getRiskThreshold();
+  const amountUnit = getAmountUnit();
+  const currencyUnit = amountUnit === 'yi' ? '亿元' : amountUnit === 'yuan' ? '元' : '万元';
 
   useEffect(() => {
     const init = async () => {
@@ -49,13 +51,13 @@ export default function Dashboard() {
       {
         title: '当前利润',
         value: summary.currentProfit,
-        unit: '万元',
+        unit: currencyUnit,
         type: summary.currentProfit >= 0 ? 'success' : 'danger',
       },
       {
         title: '预期利润',
         value: summary.expectedProfit,
-        unit: '万元',
+        unit: currencyUnit,
         type: 'default',
       },
     ];

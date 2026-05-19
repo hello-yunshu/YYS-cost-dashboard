@@ -4,7 +4,7 @@ import clsx from 'clsx';
 import useDashboardStore from '../../stores/useDashboardStore';
 
 export default function DataImport() {
-  const { selectedMonth } = useDashboardStore();
+  const { selectedMonth, fetchMonths } = useDashboardStore();
   const [file, setFile] = useState(null);
   const [importMonth, setImportMonth] = useState('');
   const [availableMonths, setAvailableMonths] = useState([]);
@@ -94,6 +94,7 @@ export default function DataImport() {
 
       if (data.success) {
         setResult({ type: 'success', message: `成功导入 ${(data.data?.rowCount || 0)} 条数据至 ${importMonth}` });
+        fetchMonths();
         const remaining = availableMonths.filter((m) => m !== importMonth);
         if (remaining.length === 0) {
           setFile(null);
@@ -141,6 +142,7 @@ export default function DataImport() {
         setImportMonth('');
         setAvailableMonths([]);
         if (inputRef.current) inputRef.current.value = '';
+        fetchMonths();
       }
     } catch (err) {
       setResult({ type: 'error', message: err.response?.data?.message || err.response?.data?.error || err.message || '批量导入失败' });

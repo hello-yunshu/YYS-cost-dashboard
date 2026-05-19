@@ -41,6 +41,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(withTitle: "打开看板", action: #selector(openDashboard(_:)), keyEquivalent: "o")
         menu.addItem(NSMenuItem.separator())
+        let moreMenu = NSMenu()
+        moreMenu.addItem(withTitle: "卸载", action: #selector(uninstallApp(_:)), keyEquivalent: "")
+        let moreItem = menu.addItem(withTitle: "更多", action: nil, keyEquivalent: "")
+        menu.setSubmenu(moreMenu, for: moreItem)
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "退出服务", action: #selector(quitApp(_:)), keyEquivalent: "q")
         statusItem.menu = menu
 
@@ -109,6 +114,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func quitApp(_ sender: Any?) {
+        NSApp.terminate(nil)
+    }
+
+    @objc func uninstallApp(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = "确定要完全卸载 Cost Dashboard 吗？"
+        alert.informativeText = "将删除以下内容：\n• 应用程序 (.app)\n• 数据库及所有数据\n• 上传文件\n• 日志文件\n• 偏好设置及缓存\n\n此操作不可恢复！"
+        alert.alertStyle = .critical
+        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: "卸载")
+        alert.buttons[1].hasDestructiveAction = true
+
+        if alert.runModal() == .alertSecondButtonReturn {
+            performUninstall()
+        }
+    }
+
+    private func performUninstall() {
+        stopServer()
+        releaseSingleInstanceLock()
+        statusItem.isVisible = false
+
+        let fm = FileManager.default
+        let homeDir = NSHomeDirectory()
+
+        let pathsToDelete: [String] = [
+            supportDir,
+            homeDir + "/Library/Preferences/\(bundleIdentifier).plist",
+            homeDir + "/Library/Caches/\(bundleIdentifier)",
+            homeDir + "/Library/Saved Application State/\(bundleIdentifier).savedState",
+            NSTemporaryDirectory() + "cost-dashboard-launcher.lock"
+        ]
+
+        for path in pathsToDelete {
+            try? fm.removeItem(atPath: path)
+        }
+
+        if let appBundlePath = Bundle.main.bundlePath,
+           appBundlePath.hasSuffix(".app") {
+            let script = "sleep 1; rm -rf '\(appBundlePath)'; rm -rf '\(supportDir)'"
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/bash")
+            process.arguments = ["-c", script]
+            try? process.run()
+        }
+
         NSApp.terminate(nil)
     }
 

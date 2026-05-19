@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import clsx from 'clsx';
 import { formatNumber, formatPercent, formatCurrency } from '../../utils/format';
-import { FIELD_LABELS, RISK_THRESHOLD } from '../../utils/constants';
+import { FIELD_LABELS } from '../../utils/constants';
+import useSettingsStore from '../../stores/useSettingsStore';
 
 export default function CostTable({ columns = [], data = [], onRowClick, highlightKey, riskThreshold = 0.05 }) {
+  const amountUnit = useSettingsStore((s) => s.settings.amountUnit || 'wan');
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
@@ -31,8 +33,8 @@ export default function CostTable({ columns = [], data = [], onRowClick, highlig
   const formatCell = (key, value) => {
     if (value === null || value === undefined) return '--';
     if (key.toLowerCase().endsWith('rate')) return formatPercent(value);
-    if (key.toLowerCase().includes('amount') || key.toLowerCase().includes('profit')) return formatCurrency(value);
-    if (key.toLowerCase().includes('value') || key.toLowerCase().includes('expense')) return formatCurrency(value);
+    if (key.toLowerCase().includes('amount') || key.toLowerCase().includes('profit')) return formatCurrency(value, amountUnit);
+    if (key.toLowerCase().includes('value') || key.toLowerCase().includes('expense')) return formatCurrency(value, amountUnit);
     if (typeof value === 'number') return formatNumber(value);
     return value;
   };
