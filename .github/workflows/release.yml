@@ -46,6 +46,59 @@ jobs:
         run: |
           Compress-Archive -Path dist-portable/* -DestinationPath Cost-Dashboard-Windows-x64.zip
 
+      - name: Verify Windows build
+        run: |
+          $zipSize = (Get-Item Cost-Dashboard-Windows-x64.zip).Length / 1MB
+          Write-Host "Archive size: $([math]::Round($zipSize, 1)) MB"
+          if ($zipSize -lt 30) { throw "Windows zip too small ($zipSize MB), expected >30 MB" }
+          if ($zipSize -gt 200) { throw "Windows zip too large ($zipSize MB), expected <200 MB" }
+          $requiredPaths = @(
+            'dist-portable\node\win-x64\node.exe',
+            'dist-portable\app\server.bundle.js',
+            'dist-portable\app\dist-frontend\index.html',
+            'dist-portable\start.bat',
+            'dist-portable\package.json'
+          )
+          foreach ($p in $requiredPaths) {
+            if (-not (Test-Path $p)) { throw "Missing required file: $p" }
+            Write-Host "  OK: $p"
+          }
+          Write-Host "Windows build verification passed"
+
+      - name: Smoke test Windows build
+        run: |
+          $env:DB_MODE = "sqljs"
+          $env:DB_PATH = "$PWD\dist-portable\data\cost_dashboard.db"
+          $env:UPLOADS_DIR = "$PWD\dist-portable\uploads"
+          $env:NODE_ENV = "production"
+          $env:PORT = "3113"
+          New-Item -ItemType Directory -Force -Path "$PWD\dist-portable\data", "$PWD\dist-portable\uploads", "$PWD\dist-portable\logs" | Out-Null
+          $proc = Start-Process -FilePath "$PWD\dist-portable\node\win-x64\node.exe" -ArgumentList "$PWD\dist-portable\app\server.bundle.js" -WorkingDirectory "$PWD\dist-portable\app" -PassThru
+          Write-Host "Server PID: $($proc.Id)"
+          $healthy = $false
+          for ($i = 0; $i -lt 30; $i++) {
+            Start-Sleep -Seconds 1
+            try {
+              $resp = Invoke-WebRequest -Uri "http://localhost:3113/api/health" -UseBasicParsing -TimeoutSec 2
+              if ($resp.StatusCode -eq 200 -and $resp.Content -match '"success":true') {
+                $healthy = $true
+                Write-Host "  OK: /api/health returned 200"
+                break
+              }
+            } catch {}
+            Write-Host "  Waiting... ($($i+1)s)"
+          }
+          if (-not $healthy) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            throw "Smoke test failed: /api/health did not respond within 30s"
+          }
+          try {
+            $months = Invoke-RestMethod -Uri "http://localhost:3113/api/months" -TimeoutSec 5 -ErrorAction Stop
+            Write-Host "  OK: /api/months responded"
+          } catch { Write-Host "  WARN: /api/months failed: $_" }
+          Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+          Write-Host "Windows smoke test passed"
+
       - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-Windows-x64
@@ -70,6 +123,65 @@ jobs:
 
       - name: Build macOS DMG
         run: bash launcher/macos/build-macos-dmg.sh dist-portable
+
+      - name: Verify macOS build
+        run: |
+          DMG_FILE=$(ls dist-dmg/*.dmg 2>/dev/null | head -1)
+          if [ -z "$DMG_FILE" ]; then echo "::error::No DMG file found in dist-dmg/" && exit 1; fi
+          DMG_SIZE=$(du -m "$DMG_FILE" | cut -f1)
+          echo "DMG: $DMG_FILE ($DMG_SIZE MB)"
+          if [ "$DMG_SIZE" -lt 80 ]; then echo "::error::DMG too small ($DMG_SIZE MB), expected >80 MB" && exit 1; fi
+          if [ "$DMG_SIZE" -gt 400 ]; then echo "::error::DMG too large ($DMG_SIZE MB), expected <400 MB" && exit 1; fi
+          REQUIRED_PATHS=(
+            "dist-portable/Cost Dashboard.app"
+            "dist-portable/Cost Dashboard.app/Contents/MacOS/CostDashboardLauncher"
+            "dist-portable/Cost Dashboard.app/Contents/Info.plist"
+            "dist-portable/app/server.bundle.js"
+            "dist-portable/app/dist-frontend/index.html"
+            "dist-portable/node/macos-arm64/bin/node"
+            "dist-portable/node/macos-x64/bin/node"
+            "dist-portable/start.sh"
+          )
+          for p in "${REQUIRED_PATHS[@]}"; do
+            if [ ! -e "$p" ]; then echo "::error::Missing: $p" && exit 1; fi
+            echo "  OK: $p"
+          done
+          echo "macOS build verification passed"
+
+      - name: Smoke test macOS build
+        run: |
+          export DB_MODE=sqljs
+          export DB_PATH="$PWD/dist-portable/data/cost_dashboard.db"
+          export UPLOADS_DIR="$PWD/dist-portable/uploads"
+          export NODE_ENV=production
+          export PORT=3113
+          mkdir -p dist-portable/data dist-portable/uploads dist-portable/logs
+          "$PWD/dist-portable/node/macos-arm64/bin/node" "$PWD/dist-portable/app/server.bundle.js" &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          HEALTHY=false
+          for i in $(seq 1 30); do
+            sleep 1
+            if curl -sf http://localhost:3113/api/health 2>/dev/null | grep -q '"success":true'; then
+              HEALTHY=true
+              echo "  OK: /api/health returned 200"
+              break
+            fi
+            echo "  Waiting... (${i}s)"
+          done
+          if [ "$HEALTHY" = "true" ]; then
+            if curl -sf http://localhost:3113/api/months 2>/dev/null > /dev/null; then
+              echo "  OK: /api/months responded"
+            fi
+          fi
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+          lsof -ti :3113 2>/dev/null | xargs -r kill 2>/dev/null || true
+          if [ "$HEALTHY" = "false" ]; then
+            echo "::error::Smoke test failed: /api/health did not respond within 30s"
+            exit 1
+          fi
+          echo "macOS smoke test passed"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -115,6 +227,20 @@ jobs:
           VERSION=$(node -e "console.log(require('./package.json').version)")
           cp android/app/build/outputs/apk/release/app-release-unsigned.apk "Cost-Dashboard-Android-${VERSION}.apk"
 
+      - name: Verify Android build
+        run: |
+          APK_FILE=$(ls Cost-Dashboard-Android-*.apk 2>/dev/null | head -1)
+          if [ -z "$APK_FILE" ]; then echo "::error::No APK file found" && exit 1; fi
+          APK_SIZE=$(du -m "$APK_FILE" | cut -f1)
+          echo "APK: $APK_FILE ($APK_SIZE MB)"
+          if [ "$APK_SIZE" -lt 10 ]; then echo "::error::APK too small ($APK_SIZE MB), expected >10 MB" && exit 1; fi
+          if [ "$APK_SIZE" -gt 100 ]; then echo "::error::APK too large ($APK_SIZE MB), expected <100 MB" && exit 1; fi
+          if ! unzip -t "$APK_FILE" > /dev/null 2>&1; then echo "::error::APK is not a valid zip archive" && exit 1; fi
+          if ! unzip -l "$APK_FILE" | grep -q "AndroidManifest.xml"; then echo "::error::APK missing AndroidManifest.xml" && exit 1; fi
+          if ! unzip -l "$APK_FILE" | grep -q "classes.dex"; then echo "::error::APK missing classes.dex" && exit 1; fi
+          echo "  OK: valid zip with AndroidManifest.xml and classes.dex"
+          echo "Android build verification passed"
+
       - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-Android-APK
@@ -135,6 +261,39 @@ jobs:
 
       - name: List artifacts
         run: find artifacts -type f | head -20
+
+      - name: Verify release artifacts
+        run: |
+          ERRORS=""
+          check_artifact() {
+            local pattern="$1" min_mb="$2" max_mb="$3" label="$4"
+            local file=$(ls $pattern 2>/dev/null | head -1)
+            if [ -z "$file" ]; then
+              ERRORS="${ERRORS}MISSING: ${label} (${pattern})\n"
+              return
+            fi
+            local size_mb=$(du -m "$file" | cut -f1)
+            echo "  $label: $(basename $file) ($size_mb MB)"
+            if [ "$size_mb" -lt "$min_mb" ]; then
+              ERRORS="${ERRORS}TOO SMALL: ${label} ($size_mb MB, expected >${min_mb} MB)\n"
+            fi
+            if [ "$size_mb" -gt "$max_mb" ]; then
+              ERRORS="${ERRORS}TOO LARGE: ${label} ($size_mb MB, expected <${max_mb} MB)\n"
+            fi
+          }
+          echo "Verifying release artifacts..."
+          check_artifact "artifacts/Cost-Dashboard-Windows-x64/*.zip" 30 200 "Windows zip"
+          check_artifact "artifacts/Cost-Dashboard-macOS-DMG/*.dmg" 80 400 "macOS DMG"
+          check_artifact "artifacts/Cost-Dashboard-Android-APK/*.apk" 10 100 "Android APK"
+          if [ -n "$ERRORS" ]; then
+            echo -e "::error::Artifact verification failed:\n$ERRORS"
+            exit 1
+          fi
+          echo "All release artifacts verified"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Get version
         id: version
