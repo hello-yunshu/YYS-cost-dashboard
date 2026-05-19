@@ -16,6 +16,16 @@ const RATE_FIELDS = [
   'collection_rate',
 ];
 
+const WEIGHTED_RATE_FIELDS = ['price_diff_rate', 'baseline_benefit_rate', 'responsibility_profit_rate'];
+
+function calculateWeightedAvgRates(summary, items, weightField) {
+  if (summary[weightField] > 0) {
+    for (const field of WEIGHTED_RATE_FIELDS) {
+      summary[field] = items.reduce((sum, p) => sum + (Number(p[field]) || 0) * (Number(p[weightField]) || 0), 0) / summary[weightField];
+    }
+  }
+}
+
 export function calculateRates(row) {
   const result = { ...row };
 
@@ -75,6 +85,7 @@ export function aggregateBranch(projects) {
   summary.projectCount = projects.length;
   summary.onlineCount = projects.filter((p) => p.is_online === 1).length;
 
+  calculateWeightedAvgRates(summary, projectsWithData, 'contract_self');
   return calculateRates(summary);
 }
 
@@ -103,6 +114,7 @@ export function aggregateCompany(branchDetails) {
   summary.projectCount = branchDetails.reduce((sum, b) => sum + (b.projectCount || 0), 0);
   summary.onlineCount = branchDetails.reduce((sum, b) => sum + (b.onlineCount || 0), 0);
 
+  calculateWeightedAvgRates(summary, branchesWithData, 'contract_self');
   return calculateRates(summary);
 }
 

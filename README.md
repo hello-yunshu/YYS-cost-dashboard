@@ -5,11 +5,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React-18-61dafb?logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/ECharts-5-aa344d?logo=apache-echarts" alt="ECharts" />
-  <img src="https://img.shields.io/badge/Express-4-000000?logo=express" alt="Express" />
+  <img src="https://img.shields.io/badge/React-19-61dafb?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/ECharts-6-aa344d?logo=apache-echarts" alt="ECharts" />
+  <img src="https://img.shields.io/badge/Express-5-000000?logo=express" alt="Express" />
   <img src="https://img.shields.io/badge/SQLite-sql.js-003b57?logo=sqlite" alt="SQLite" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker" alt="Docker" />
+  <img src="https://img.shields.io/badge/Android-Capacitor-3DDC84?logo=android" alt="Android" />
 </p>
 
 ***
@@ -24,12 +25,13 @@
 - **🌙 亮暗主题** — 支持浅色/深色/跟随系统三种模式
 - **📱 响应式** — 移动端适配，管理页面支持手机操作
 - **🐳 零配置部署** — Docker 一键启动，数据持久化，开箱即用
+- **💻 多平台分发** — Windows EXE / macOS DMG / Android APK
 
 ## 🏗 技术架构
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌────────────┐
-│   React 18  │────▶│  Express 4   │────▶│  sql.js    │
+│   React 19  │────▶│  Express 5   │────▶│  sql.js    │
 │  + ECharts  │     │  API Server  │     │  (SQLite)  │
 │  + Zustand  │◀────│  :3113       │◀────│  In-WASM   │
 └─────────────┘     └──────────────┘     └────────────┘
@@ -39,13 +41,14 @@
 
 | 层级  | 技术选型                                |
 | --- | ----------------------------------- |
-| 前端  | React 18 + React Router 6 + Zustand |
-| 图表  | ECharts 5 (echarts-for-react)       |
-| 样式  | Tailwind CSS 3 + CSS Variables      |
-| 后端  | Express 4 + Multer (文件上传)           |
+| 前端  | React 19 + React Router 7 + Zustand 5 |
+| 图表  | ECharts 6 (echarts-for-react)       |
+| 样式  | Tailwind CSS 4 + CSS Variables      |
+| 后端  | Express 5 + Multer 2 (文件上传)         |
 | 数据库 | sql.js (SQLite 编译为 WebAssembly)     |
 | 报告  | pdfmake + NotoSansSC 字体             |
-| 构建  | Vite 5 + esbuild                    |
+| 构建  | Vite 8 + esbuild                    |
+| 移动端 | Capacitor 8 (Android WebView)       |
 | 部署  | Docker (Nginx + Node.js)            |
 
 ## 🚀 快速开始
@@ -53,12 +56,11 @@
 ### 开发模式
 
 ```bash
-cd cost-dashboard
 npm install
 npm run dev
 ```
 
-访问 \*\*<http://localhost:5173**，Vite> 提供热更新，API 请求自动代理到后端 `:3113`。
+访问 **http://localhost:5173**，Vite 提供热更新，API 请求自动代理到后端 `:3113`。
 
 ### 生产模式
 
@@ -68,7 +70,7 @@ npm run build
 npm start
 ```
 
-访问 \*\*<http://localhost:3113**，Express> 直接托管前端静态文件。
+访问 **http://localhost:3113**，Express 直接托管前端静态文件。
 
 ### Docker 部署
 
@@ -76,27 +78,81 @@ npm start
 docker compose up -d
 ```
 
-访问 \*\*<http://localhost:8369**，Nginx> 反向代理 + Node.js 后端。
+访问 **http://localhost:8369**，Nginx 反向代理 + Node.js 后端。
 
-### 便携版（免安装 Node.js）
+## 📦 多平台构建
 
-首次构建便携版前，必须先在项目根目录安装依赖，否则会出现 `'vite' 不是内部或外部命令` 这类构建错误。
-首次生成便携包时，会把项目里的 `data/cost_dashboard.db` 复制到 `dist-portable/data/`；之后重复构建会保留 `dist-portable/data/cost_dashboard.db`，不会覆盖已经导入的数据。
+首次构建前必须先安装依赖：`npm install`
+
+### Windows（便携版 + EXE 启动器）
 
 ```bash
-npm install                    # 首次构建必须先执行
-npm run build:portable          # 通用
-npm run build:portable:win      # Windows（含 .exe 启动器，需在 Windows 上执行）
+npm run build:win
 ```
 
-| 系统            | 启动                                    | 停止                       |
-| ------------- | ------------------------------------- | ------------------------ |
-| Windows       | 双击 `Cost-Dashboard.exe` 或 `start.bat` | 右键托盘图标选择 `退出服务`，或双击 `stop.bat` |
-| macOS / Linux | `./start.sh`（首次需 `chmod +x start.sh`） | `Ctrl+C`                 |
+产物：`dist-portable/Cost-Dashboard.exe` + 便携版目录
 
-浏览器访问 **<http://localhost:3113>**
+| 启动 | 停止 |
+| --- | --- |
+| 双击 `Cost-Dashboard.exe` 或 `start.bat` | 右键托盘图标选择「退出服务」，或双击 `stop.bat` |
 
-Windows 下使用 `Cost-Dashboard.exe` 启动后，程序会常驻系统托盘；双击托盘图标可重新打开看板，右键托盘图标可退出服务。
+> ⚠️ EXE 启动器编译需要在 Windows 上执行（依赖 .NET csc.exe）。在 macOS/Linux 上会跳过 EXE 编译，仅生成便携版文件。
+
+### macOS（便携版 + .app 启动器 + DMG）
+
+```bash
+npm run build:macos          # 完整构建（便携版 + .app + DMG）
+npm run build:dmg            # 仅打包 DMG（需先运行 build:macos）
+```
+
+产物：`dist-dmg/Cost-Dashboard-macOS-x.x.x.dmg`
+
+| 启动 | 停止 |
+| --- | --- |
+| 双击 `Cost Dashboard.app` 或 `./start.sh` | 菜单栏图标选择「退出服务」，或 `./stop.sh` |
+
+> ⚠️ .app 和 DMG 编译需要在 macOS 上执行（依赖 swiftc）。
+
+### Android（APK）
+
+```bash
+npm run build:android
+```
+
+产物：`dist-android/Cost-Dashboard-Android-x.x.x-release-unsigned.apk`
+
+> ⚠️ APK 构建需要 Android SDK 和 Java 17+。在 GitHub Actions 中自动处理。
+
+### 全平台便携版
+
+```bash
+npm run build:portable
+```
+
+下载所有平台的 Node.js 运行时，生成完整便携版目录。
+
+### 构建命令一览
+
+| 命令 | 产物 | 平台要求 |
+| --- | --- | --- |
+| `npm run build:win` | 便携版 + EXE | Windows |
+| `npm run build:macos` | 便携版 + .app + DMG | macOS |
+| `npm run build:android` | APK | 任意（需 Android SDK） |
+| `npm run build:portable` | 全平台便携版 | 任意 |
+| `npm run build:launcher:win` | 仅 EXE | Windows |
+| `npm run build:launcher:macos` | 仅 .app | macOS |
+| `npm run build:dmg` | 仅 DMG | macOS |
+
+### GitHub Actions 自动发布
+
+推送 tag 即可自动构建并发布 Release：
+
+```bash
+git tag v2.2.0
+git push origin v2.2.0
+```
+
+工作流会并行构建 Windows ZIP、macOS DMG、Android APK，并自动创建 GitHub Release。
 
 ## 📁 项目结构
 
@@ -121,9 +177,14 @@ cost-dashboard/
 │   │   └── Admin/           #   数据导入、月份管理、设置
 │   ├── stores/              #   Zustand 状态管理
 │   └── utils/               #   图表渲染、报告生成、格式化
-├── nginx/                   #   Docker Nginx 配置
-├── launcher/                #   Windows .exe 启动器源码
+├── launcher/                #   平台启动器源码
+│   ├── windows/             #     Windows C# 启动器 + PowerShell 构建脚本
+│   ├── macos/               #     macOS Swift 启动器 + DMG 打包脚本
+│   └── android/             #     Android APK 构建脚本
+├── android/                 #   Capacitor Android 项目
 ├── scripts/                 #   便携版启动/停止脚本
+├── nginx/                   #   Docker Nginx 配置
+├── .github/workflows/       #   CI/CD (Build & Release)
 ├── Dockerfile               #   多阶段构建
 └── docker-compose.yml
 ```
@@ -178,10 +239,10 @@ npm run seed
 
 | 项目      | 要求                                  |
 | ------- | ----------------------------------- |
-| Node.js | 18 或更高版本（开发/生产模式需要）                 |
+| Node.js | 24 或更高版本（开发/生产模式需要）                 |
 | Docker  | 任意版本（Docker 部署需要）                   |
 | 浏览器     | Chrome / Firefox / Edge / Safari    |
-| 磁盘空间    | 约 200MB                             |
+| 磁盘空间    | 约 200MB（便携版约 300MB，含 Node.js 运行时）   |
 | 操作系统    | Windows 10+ / macOS 12+ / Linux x64 |
 
 ## ❓ 常见问题
@@ -192,11 +253,11 @@ npm run seed
 
 **npm install 报错怎么办？**
 
-确认 Node.js 版本 ≥ 18，尝试删除 `node_modules` 后重新执行 `npm install`。
+确认 Node.js 版本 ≥ 24，尝试删除 `node_modules` 后重新执行 `npm install`。
 
 **打包时报 `vite` 不是内部或外部命令怎么办？**
 
-说明还没有安装前端构建依赖。请在 Windows 项目根目录先执行 `npm install`，完成后再运行 `npm run build:portable:win`。
+说明还没有安装前端构建依赖。请在项目根目录先执行 `npm install`，完成后再运行构建命令。
 
 **打包时报 `unzip` 不是内部或外部命令怎么办？**
 
@@ -209,6 +270,10 @@ npm run seed
 **页面打不开？**
 
 确认终端没有红色报错信息，检查浏览器访问的端口号是否正确（开发模式 5173，生产模式 3113，Docker 8369）。
+
+**macOS 上打开 .app 提示"无法验证开发者"怎么办？**
+
+右键点击 `Cost Dashboard.app`，选择「打开」，在弹窗中再次点击「打开」即可。或在终端执行 `xattr -cr "Cost Dashboard.app"` 移除隔离属性。
 
 ## 📄 License
 
