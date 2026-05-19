@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-portable/
+data/*.db*
+data/*.db-journal
+uploads/*
+.env
+.env.*
+*.log
+.DS_Storex
