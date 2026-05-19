@@ -1,0 +1,142 @@
+name: Build & Release
+
+on:
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build portable (Windows only)
+        run: node build-portable.js --platform win-x64
+
+      - name: Create Windows archive
+        run: |
+          Compress-Archive -Path dist-portable/* -DestinationPath Cost-Dashboard-Windows-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cost-Dashboard-Windows-x64
+          path: Cost-Dashboard-Windows-x64.zip
+          retention-days: 7
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build portable (macOS only)
+        run: node build-portable.js --platform macos-arm64,macos-x64
+
+      - name: Build macOS DMG
+        run: bash launcher/macos/build-macos-dmg.sh dist-portable
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cost-Dashboard-macOS-DMG
+          path: dist-dmg/*.dmg
+          retention-days: 7
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - run: npm ci
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build Android APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Rename APK
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk "Cost-Dashboard-Android-${VERSION}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Cost-Dashboard-Android-APK
+          path: Cost-Dashboard-Android-*.apk
+          retention-days: 7
+
+  release:
+    needs: [build-windows, build-macos, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: find artifacts -type f | head -20
+
+      - name: Get version
+        id: version
+        run: echo "tag=v$(node -e "console.log(require('./package.json').version)")" >> $GITHUB_OUTPUT
+
+      - name: Force update tag to current commit
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git tag -f "$TAG"
+          git push -f origin "$TAG"
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            artifacts/Cost-Dashboard-Windows-x64/*.zip
+            artifacts/Cost-Dashboard-macOS-DMG/*.dmg
+            artifacts/Cost-Dashboard-Android-APK/*.apk
