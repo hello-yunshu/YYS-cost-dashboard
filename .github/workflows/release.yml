@@ -42,27 +42,22 @@ jobs:
       - name: Build portable (Windows only)
         run: node build-portable.js --platform win-x64
 
-      - name: Create Windows archive
+      - name: Verify standalone exe
         run: |
-          Compress-Archive -Path dist-portable/* -DestinationPath Cost-Dashboard-Windows-x64.zip
-
-      - name: Verify Windows build
-        run: |
-          $zipSize = (Get-Item Cost-Dashboard-Windows-x64.zip).Length / 1MB
-          Write-Host "Archive size: $([math]::Round($zipSize, 1)) MB"
-          if ($zipSize -lt 30) { throw "Windows zip too small ($zipSize MB), expected >30 MB" }
-          if ($zipSize -gt 200) { throw "Windows zip too large ($zipSize MB), expected <200 MB" }
-          $requiredPaths = @(
-            'dist-portable\node\win-x64\node.exe',
-            'dist-portable\app\server.bundle.js',
-            'dist-portable\app\dist-frontend\index.html',
-            'dist-portable\start.bat',
-            'dist-portable\package.json'
-          )
-          foreach ($p in $requiredPaths) {
-            if (-not (Test-Path $p)) { throw "Missing required file: $p" }
-            Write-Host "  OK: $p"
-          }
+          $exePath = "dist-portable\Cost-Dashboard.exe"
+          if (-not (Test-Path $exePath)) { throw "Standalone exe not found: $exePath" }
+          $exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
+          Write-Host "Standalone exe size: $exeSize MB"
+          if ($exeSize -lt 30) { throw "Standalone exe too small ($exeSize MB), expected >30 MB" }
+          if ($exeSize -gt 300) { throw "Standalone exe too large ($exeSize MB), expected <300 MB" }
+          $footerBytes = New-Object byte[] 4
+          $fs = [System.IO.File]::OpenRead($exePath)
+          $fs.Seek(-4, 'End') | Out-Null
+          $fs.Read($footerBytes, 0, 4) | Out-Null
+          $fs.Close()
+          $magic = [System.Text.Encoding]::ASCII.GetString($footerBytes)
+          if ($magic -ne 'CDSE') { throw "Standalone exe footer magic mismatch: got '$magic', expected 'CDSE'" }
+          Write-Host "  OK: standalone exe with embedded payload (magic: $magic)"
           Write-Host "Windows build verification passed"
 
       - name: Smoke test Windows build
@@ -99,15 +94,20 @@ jobs:
           Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
           Write-Host "Windows smoke test passed"
 
+      - name: Rename standalone exe
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          Copy-Item "dist-portable\Cost-Dashboard.exe" "Cost-Dashboard-Windows-x64.exe"
+
       - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-Windows-x64
-          path: Cost-Dashboard-Windows-x64.zip
+          path: Cost-Dashboard-Windows-x64.exe
           retention-days: 7
 
   build-macos:
     needs: cleanup
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v6
 
@@ -132,15 +132,15 @@ jobs:
           echo "DMG: $DMG_FILE ($DMG_SIZE MB)"
           if [ "$DMG_SIZE" -lt 80 ]; then echo "::error::DMG too small ($DMG_SIZE MB), expected >80 MB" && exit 1; fi
           if [ "$DMG_SIZE" -gt 400 ]; then echo "::error::DMG too large ($DMG_SIZE MB), expected <400 MB" && exit 1; fi
+          APP_BUNDLE="dist-portable/Cost Dashboard.app"
           REQUIRED_PATHS=(
-            "dist-portable/Cost Dashboard.app"
-            "dist-portable/Cost Dashboard.app/Contents/MacOS/CostDashboardLauncher"
-            "dist-portable/Cost Dashboard.app/Contents/Info.plist"
-            "dist-portable/app/server.bundle.js"
-            "dist-portable/app/dist-frontend/index.html"
-            "dist-portable/node/macos-arm64/bin/node"
-            "dist-portable/node/macos-x64/bin/node"
-            "dist-portable/start.sh"
+            "$APP_BUNDLE"
+            "$APP_BUNDLE/Contents/MacOS/CostDashboardLauncher"
+            "$APP_BUNDLE/Contents/Info.plist"
+            "$APP_BUNDLE/Contents/Resources/app/server.bundle.js"
+            "$APP_BUNDLE/Contents/Resources/app/dist-frontend/index.html"
+            "$APP_BUNDLE/Contents/Resources/node/macos-arm64/bin/node"
+            "$APP_BUNDLE/Contents/Resources/node/macos-x64/bin/node"
           )
           for p in "${REQUIRED_PATHS[@]}"; do
             if [ ! -e "$p" ]; then echo "::error::Missing: $p" && exit 1; fi
@@ -156,7 +156,8 @@ jobs:
           export NODE_ENV=production
           export PORT=3113
           mkdir -p dist-portable/data dist-portable/uploads dist-portable/logs
-          "$PWD/dist-portable/node/macos-arm64/bin/node" "$PWD/dist-portable/app/server.bundle.js" &
+          APP_BUNDLE="dist-portable/Cost Dashboard.app"
+          "$APP_BUNDLE/Contents/Resources/node/macos-arm64/bin/node" "$APP_BUNDLE/Contents/Resources/app/server.bundle.js" &
           SERVER_PID=$!
           echo "Server PID: $SERVER_PID"
           HEALTHY=false
@@ -299,7 +300,7 @@ jobs:
             fi
           }
           echo "Verifying release artifacts..."
-          check_artifact "artifacts/Cost-Dashboard-Windows-x64/*.zip" 30 200 "Windows zip"
+          check_artifact "artifacts/Cost-Dashboard-Windows-x64/*.exe" 30 300 "Windows exe"
           check_artifact "artifacts/Cost-Dashboard-macOS-DMG/*.dmg" 80 400 "macOS DMG"
           check_artifact "artifacts/Cost-Dashboard-Android-APK/*.apk" 10 100 "Android APK"
           if [ -n "$ERRORS" ]; then
@@ -345,6 +346,6 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           body: ${{ steps.notes.outputs.notes }}
           files: |
-            artifacts/Cost-Dashboard-Windows-x64/*.zip
+            artifacts/Cost-Dashboard-Windows-x64/*.exe
             artifacts/Cost-Dashboard-macOS-DMG/*.dmg
             artifacts/Cost-Dashboard-Android-APK/*.apk

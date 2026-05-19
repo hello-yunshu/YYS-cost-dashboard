@@ -11,16 +11,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var serverProcess: Process?
     var port: Int
     var url: String
-    var rootDir: String
+    var resourcesDir: String
+    var supportDir: String
     var isRunning = false
+    var dockMenu: NSMenu!
 
     override init() {
         port = Int(ProcessInfo.processInfo.environment["PORT"] ?? "") ?? defaultPort
         url = "http://localhost:\(port)"
 
-        let executablePath = Bundle.main.executablePath ?? ""
-        let exeURL = URL(fileURLWithPath: executablePath)
-        rootDir = exeURL.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().path
+        resourcesDir = Bundle.main.resourcePath ?? ""
+        supportDir = NSSearchPathForDirectoriesInDomains(.applicationSupportDirectory, .userDomainMask, true).first! + "/Cost Dashboard"
 
         super.init()
     }
@@ -43,6 +44,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "退出服务", action: #selector(quitApp(_:)), keyEquivalent: "q")
         statusItem.menu = menu
 
+        dockMenu = NSMenu()
+        dockMenu.addItem(withTitle: "打开看板", action: #selector(openDashboard(_:)), keyEquivalent: "")
+        dockMenu.addItem(NSMenuItem.separator())
+        dockMenu.addItem(withTitle: "退出服务", action: #selector(quitApp(_:)), keyEquivalent: "")
+
         if isDashboardHealthy(url) {
             showNotification("Cost Dashboard 已在运行")
             openBrowser(url)
@@ -58,25 +64,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let nodeBin = findNodeBinary()
         guard let nodeBin = nodeBin else {
-            showError("未找到 Node.js 运行时。\n\n请重新构建便携版包。")
+            showError("未找到 Node.js 运行时。\n\n请重新安装 Cost Dashboard。")
             NSApp.terminate(nil)
             return
         }
 
-        let serverBundle = rootDir + "/app/server.bundle.js"
+        let serverBundle = resourcesDir + "/app/server.bundle.js"
         if !FileManager.default.fileExists(atPath: serverBundle) {
-            showError("未找到应用文件:\n\(serverBundle)\n\n请重新构建便携版包。")
+            showError("未找到应用文件:\n\(serverBundle)\n\n请重新安装 Cost Dashboard。")
             NSApp.terminate(nil)
             return
         }
 
-        let dataDir = rootDir + "/data"
-        let uploadsDir = rootDir + "/uploads"
-        let logsDir = rootDir + "/logs"
+        let dataDir = supportDir + "/data"
+        let uploadsDir = supportDir + "/uploads"
+        let logsDir = supportDir + "/logs"
 
         for dir in [dataDir, uploadsDir, logsDir] {
             try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
         }
+
+        migratePortableDataIfNeeded()
 
         startServer(nodeBin: nodeBin, serverBundle: serverBundle, dataDir: dataDir, uploadsDir: uploadsDir, logsDir: logsDir)
 
@@ -104,18 +112,50 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        return dockMenu
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        openBrowser(url)
+        return true
+    }
+
+    private func migratePortableDataIfNeeded() {
+        let portableDataDir = resourcesDir + "/data"
+        let portableUploadsDir = resourcesDir + "/uploads"
+        let targetDataDir = supportDir + "/data"
+        let targetUploadsDir = supportDir + "/uploads"
+
+        let fm = FileManager.default
+
+        // Migrate data directory
+        if fm.fileExists(atPath: portableDataDir),
+           !fm.fileExists(atPath: targetDataDir) {
+            try? fm.createDirectory(atPath: supportDir, withIntermediateDirectories: true)
+            try? fm.moveItem(atPath: portableDataDir, toPath: targetDataDir)
+        }
+
+        // Migrate uploads directory
+        if fm.fileExists(atPath: portableUploadsDir),
+           !fm.fileExists(atPath: targetUploadsDir) {
+            try? fm.createDirectory(atPath: supportDir, withIntermediateDirectories: true)
+            try? fm.moveItem(atPath: portableUploadsDir, toPath: targetUploadsDir)
+        }
+    }
+
     private func findNodeBinary() -> String? {
         let arch = ProcessInfo.processInfo.machineHardwareName
         let nodeDir: String
         if arch == "arm64" {
-            nodeDir = rootDir + "/node/macos-arm64/bin/node"
+            nodeDir = resourcesDir + "/node/macos-arm64/bin/node"
         } else {
-            nodeDir = rootDir + "/node/macos-x64/bin/node"
+            nodeDir = resourcesDir + "/node/macos-x64/bin/node"
         }
         if FileManager.default.fileExists(atPath: nodeDir) {
             return nodeDir
         }
-        let fallback = rootDir + "/node/macos-x64/bin/node"
+        let fallback = resourcesDir + "/node/macos-x64/bin/node"
         if FileManager.default.fileExists(atPath: fallback) {
             return fallback
         }
@@ -126,7 +166,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: nodeBin)
         process.arguments = [serverBundle]
-        process.currentDirectoryURL = URL(fileURLWithPath: rootDir + "/app")
+        process.currentDirectoryURL = URL(fileURLWithPath: resourcesDir + "/app")
 
         var env = ProcessInfo.processInfo.environment
         env["DB_MODE"] = "sqljs"
@@ -366,5 +406,5 @@ extension ProcessInfo {
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
-app.setActivationPolicy(.accessory)
+app.setActivationPolicy(.regular)
 app.run()
