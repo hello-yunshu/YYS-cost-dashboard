@@ -181,7 +181,7 @@ function buildWindowsLauncher() {
     return;
   }
 
-  run(`powershell -NoProfile -ExecutionPolicy Bypass -File "${launcherScript}" -OutputDir "${DIST_PORTABLE}"`);
+  run(`powershell -NoProfile -ExecutionPolicy Bypass -File "${launcherScript}" -OutputDir "${DIST_PORTABLE}" -Standalone`);
 }
 
 function buildMacOSLauncher() {

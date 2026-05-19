@@ -29,12 +29,12 @@ if ! command -v swiftc &> /dev/null; then
 fi
 
 echo ""
-echo "[Step 1/5] Creating .app bundle structure..."
+echo "[Step 1/7] Creating .app bundle structure..."
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS"
 mkdir -p "$APP_DIR/Contents/Resources"
 
-echo "[Step 2/5] Generating app icon..."
+echo "[Step 2/7] Generating app icon..."
 generate_icon() {
     local iconset_dir="$APP_DIR/Contents/Resources/AppIcon.iconset"
     mkdir -p "$iconset_dir"
@@ -148,12 +148,12 @@ with open('/tmp/cost_dashboard_icon_1024.png', 'wb') as f:
 
 generate_icon
 
-echo "[Step 3/5] Processing Info.plist..."
+echo "[Step 3/7] Processing Info.plist..."
 sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__COPYRIGHT_YEAR__/$(date +%Y)/g" \
     "$SCRIPT_DIR/Info.plist" > "$APP_DIR/Contents/Info.plist"
 
-echo "[Step 4/5] Compiling Swift launcher..."
+echo "[Step 4/7] Compiling Swift launcher..."
 TEMP_SOURCE="$OUTPUT_DIR/CostDashboardLauncher.swift.tmp"
 sed "s/__VERSION__/$VERSION/g" "$SCRIPT_DIR/CostDashboardLauncher.swift" > "$TEMP_SOURCE"
 mv "$TEMP_SOURCE" "${TEMP_SOURCE%.tmp}"
@@ -171,12 +171,61 @@ rm -f "${TEMP_SOURCE%.tmp}"
 
 chmod +x "$APP_DIR/Contents/MacOS/CostDashboardLauncher"
 
-echo "[Step 5/5] Copying launcher source to tools..."
+echo "[Step 5/7] Copying launcher source to tools..."
 TOOLS_DIR="$OUTPUT_DIR/tools/launcher/macos"
 mkdir -p "$TOOLS_DIR"
 cp "$SCRIPT_DIR/CostDashboardLauncher.swift" "$TOOLS_DIR/"
 cp "$SCRIPT_DIR/Info.plist" "$TOOLS_DIR/"
 cp "$SCRIPT_DIR/build-macos-launcher.sh" "$TOOLS_DIR/"
+
+echo "[Step 6/7] Copying application files into .app bundle..."
+if [ -d "$OUTPUT_DIR/app" ]; then
+    ditto "$OUTPUT_DIR/app" "$APP_DIR/Contents/Resources/app"
+    echo "  Copied app/ into .app bundle"
+else
+    echo "  WARNING: $OUTPUT_DIR/app not found, skipping"
+fi
+
+if [ -d "$OUTPUT_DIR/node/macos-arm64" ]; then
+    mkdir -p "$APP_DIR/Contents/Resources/node"
+    ditto "$OUTPUT_DIR/node/macos-arm64" "$APP_DIR/Contents/Resources/node/macos-arm64"
+    echo "  Copied node/macos-arm64/ into .app bundle"
+fi
+if [ -d "$OUTPUT_DIR/node/macos-x64" ]; then
+    mkdir -p "$APP_DIR/Contents/Resources/node"
+    ditto "$OUTPUT_DIR/node/macos-x64" "$APP_DIR/Contents/Resources/node/macos-x64"
+    echo "  Copied node/macos-x64/ into .app bundle"
+fi
+
+if [ -d "$OUTPUT_DIR/data" ]; then
+    ditto "$OUTPUT_DIR/data" "$APP_DIR/Contents/Resources/data"
+    echo "  Copied data/ into .app bundle (will be migrated to Application Support on first launch)"
+fi
+
+echo "[Step 7/7] Checking for Liquid Glass icon (Assets.car)..."
+if [ -f "$SCRIPT_DIR/Assets.car" ]; then
+    cp "$SCRIPT_DIR/Assets.car" "$APP_DIR/Contents/Resources/Assets.car"
+    echo "  Copied pre-built Assets.car (Liquid Glass icon) into .app bundle"
+elif [ -d "$SCRIPT_DIR/AppIcon.icon" ] && command -v actool &> /dev/null; then
+    echo "  Compiling Liquid Glass icon from AppIcon.icon..."
+    actool "$SCRIPT_DIR/AppIcon.icon" \
+        --compile "$APP_DIR/Contents/Resources" \
+        --app-icon AppIcon \
+        --enable-on-demand-resources NO \
+        --development-region zh_CN \
+        --target-device mac \
+        --platform macosx \
+        --minimum-deployment-target 10.15 \
+        --output-partial-info-plist /dev/null \
+        2>/dev/null
+    if [ -f "$APP_DIR/Contents/Resources/Assets.car" ]; then
+        echo "  Compiled Assets.car (Liquid Glass icon) into .app bundle"
+    else
+        echo "  WARNING: actool compilation failed, using .icns icon (pre-macOS 26)"
+    fi
+else
+    echo "  No Liquid Glass icon source found, using .icns icon (pre-macOS 26)"
+fi
 
 echo ""
 echo "=== macOS Launcher Built ==="

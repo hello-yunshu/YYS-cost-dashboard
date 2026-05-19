@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -16,6 +17,8 @@ namespace CostDashboardLauncher
         private const int DefaultPort = 3113;
         private const string MutexName = "CostDashboardLauncher.Portable";
         internal static readonly string Version = "__VERSION__";
+        private const string StandaloneMagic = "CDSE";
+        private const string AppDataName = "Cost Dashboard";
 
         [STAThread]
         private static int Main()
@@ -55,6 +58,51 @@ namespace CostDashboardLauncher
             }
             return DefaultPort;
         }
+
+        internal static bool IsStandaloneMode()
+        {
+            try
+            {
+                using (FileStream fs = new FileStream(Application.ExecutablePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    if (fs.Length < 12) return false;
+                    fs.Seek(-4, SeekOrigin.End);
+                    byte[] magic = new byte[4];
+                    fs.Read(magic, 0, 4);
+                    return Encoding.ASCII.GetString(magic) == StandaloneMagic;
+                }
+            }
+            catch { return false; }
+        }
+
+        internal static string GetStandaloneAppDir()
+        {
+            string appDataDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppDataName);
+            return Path.Combine(appDataDir, "v" + Version);
+        }
+
+        internal static string GetStandaloneDataDir()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppDataName, "data");
+        }
+
+        internal static string GetStandaloneUploadsDir()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppDataName, "uploads");
+        }
+
+        internal static string GetStandaloneLogsDir()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppDataName, "logs");
+        }
     }
 
     internal sealed class LauncherContext : ApplicationContext
@@ -91,19 +139,43 @@ namespace CostDashboardLauncher
 
         private void Start()
         {
-            string rootDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
-                Path.DirectorySeparatorChar,
-                Path.AltDirectorySeparatorChar
-            );
-            string appDir = Path.Combine(rootDir, "app");
-            string dataDir = Path.Combine(rootDir, "data");
-            string uploadsDir = Path.Combine(rootDir, "uploads");
-            string logsDir = Path.Combine(rootDir, "logs");
-            string nodeExe = Path.Combine(rootDir, "node", "win-x64", "node.exe");
-            string serverBundle = Path.Combine(appDir, "server.bundle.js");
-            string dbPath = Path.Combine(dataDir, "cost_dashboard.db");
+            string rootDir;
+            string appDir;
+            string dataDir;
+            string uploadsDir;
+            string logsDir;
+            string nodeExe;
+            string serverBundle;
+            string dbPath;
+
             port = Program.GetPort();
             url = "http://localhost:" + port;
+
+            if (Program.IsStandaloneMode())
+            {
+                rootDir = EnsureExtractedFiles();
+                appDir = Path.Combine(rootDir, "app");
+                dataDir = Program.GetStandaloneDataDir();
+                uploadsDir = Program.GetStandaloneUploadsDir();
+                logsDir = Program.GetStandaloneLogsDir();
+                nodeExe = Path.Combine(rootDir, "node", "win-x64", "node.exe");
+                serverBundle = Path.Combine(appDir, "server.bundle.js");
+                dbPath = Path.Combine(dataDir, "cost_dashboard.db");
+            }
+            else
+            {
+                rootDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar
+                );
+                appDir = Path.Combine(rootDir, "app");
+                dataDir = Path.Combine(rootDir, "data");
+                uploadsDir = Path.Combine(rootDir, "uploads");
+                logsDir = Path.Combine(rootDir, "logs");
+                nodeExe = Path.Combine(rootDir, "node", "win-x64", "node.exe");
+                serverBundle = Path.Combine(appDir, "server.bundle.js");
+                dbPath = Path.Combine(dataDir, "cost_dashboard.db");
+            }
 
             if (IsDashboardHealthy(url))
             {
@@ -123,7 +195,14 @@ namespace CostDashboardLauncher
 
             if (!File.Exists(nodeExe))
             {
-                ShowError("Node.js runtime was not found:\n" + nodeExe + "\n\nPlease rebuild the portable package.");
+                if (Program.IsStandaloneMode())
+                {
+                    ShowError("Application files are incomplete. Please re-download Cost Dashboard.");
+                }
+                else
+                {
+                    ShowError("Node.js runtime was not found:\n" + nodeExe + "\n\nPlease rebuild the portable package.");
+                }
                 ExitCode = 3;
                 ShouldRun = false;
                 return;
@@ -131,7 +210,14 @@ namespace CostDashboardLauncher
 
             if (!File.Exists(serverBundle))
             {
-                ShowError("Application bundle was not found:\n" + serverBundle + "\n\nPlease rebuild the portable package.");
+                if (Program.IsStandaloneMode())
+                {
+                    ShowError("Application files are incomplete. Please re-download Cost Dashboard.");
+                }
+                else
+                {
+                    ShowError("Application bundle was not found:\n" + serverBundle + "\n\nPlease rebuild the portable package.");
+                }
                 ExitCode = 4;
                 ShouldRun = false;
                 return;
@@ -140,6 +226,11 @@ namespace CostDashboardLauncher
             Directory.CreateDirectory(dataDir);
             Directory.CreateDirectory(uploadsDir);
             Directory.CreateDirectory(logsDir);
+
+            if (Program.IsStandaloneMode())
+            {
+                CopySeedDataIfNeeded(rootDir, dataDir);
+            }
 
             serverProcess = StartServer(appDir, nodeExe, serverBundle, dbPath, uploadsDir, logsDir, port);
             if (serverProcess == null)
@@ -161,6 +252,176 @@ namespace CostDashboardLauncher
             StopServer();
             ExitCode = 6;
             ShouldRun = false;
+        }
+
+        private static string EnsureExtractedFiles()
+        {
+            string versionDir = Program.GetStandaloneAppDir();
+            string markerFile = Path.Combine(versionDir, ".extracted");
+
+            if (File.Exists(markerFile)
+                && File.Exists(Path.Combine(versionDir, "node", "win-x64", "node.exe"))
+                && File.Exists(Path.Combine(versionDir, "app", "server.bundle.js")))
+            {
+                CleanupOldVersions(versionDir);
+                return versionDir;
+            }
+
+            Form extractForm = CreateExtractForm();
+            extractForm.Show();
+            Application.DoEvents();
+
+            try
+            {
+                if (Directory.Exists(versionDir))
+                {
+                    Directory.Delete(versionDir, true);
+                }
+                Directory.CreateDirectory(versionDir);
+
+                long zipSize;
+                string tempZip = Path.Combine(Path.GetTempPath(), "CostDashboard_" + Program.Version + ".zip");
+
+                try
+                {
+                    using (FileStream srcFs = new FileStream(Application.ExecutablePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        byte[] footer = new byte[12];
+                        srcFs.Seek(-12, SeekOrigin.End);
+                        srcFs.Read(footer, 0, 12);
+                        zipSize = BitConverter.ToInt64(footer, 0);
+
+                        srcFs.Seek(-(12 + zipSize), SeekOrigin.End);
+
+                        using (FileStream dstFs = new FileStream(tempZip, FileMode.Create, FileAccess.Write))
+                        {
+                            byte[] buffer = new byte[81920];
+                            long remaining = zipSize;
+                            while (remaining > 0)
+                            {
+                                int toRead = (int)Math.Min(buffer.Length, remaining);
+                                int read = srcFs.Read(buffer, 0, toRead);
+                                if (read == 0) break;
+                                dstFs.Write(buffer, 0, read);
+                                remaining -= read;
+                            }
+                        }
+                    }
+
+                    ExtractZipToDirectory(tempZip, versionDir);
+                    File.WriteAllText(markerFile, DateTime.UtcNow.ToString("O"));
+                }
+                finally
+                {
+                    try { if (File.Exists(tempZip)) File.Delete(tempZip); } catch { }
+                }
+
+                CleanupOldVersions(versionDir);
+            }
+            catch (Exception ex)
+            {
+                extractForm.Close();
+                ShowError("Failed to extract application files:\n" + ex.Message + "\n\nPlease try running as administrator or re-download the application.");
+                return versionDir;
+            }
+            finally
+            {
+                extractForm.Close();
+            }
+
+            return versionDir;
+        }
+
+        private static Form CreateExtractForm()
+        {
+            Form form = new Form();
+            form.Text = "Cost Dashboard " + Program.Version;
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.StartPosition = FormStartPosition.CenterScreen;
+            form.ClientSize = new Size(380, 90);
+            form.MaximizeBox = false;
+            form.MinimizeBox = false;
+            form.ControlBox = false;
+
+            Label label = new Label();
+            label.Text = "首次运行，正在解压文件，请稍候...";
+            label.Location = new Point(12, 15);
+            label.Size = new Size(356, 20);
+            form.Controls.Add(label);
+
+            ProgressBar progress = new ProgressBar();
+            progress.Location = new Point(12, 45);
+            progress.Size = new Size(356, 23);
+            progress.Style = ProgressBarStyle.Marquee;
+            form.Controls.Add(progress);
+
+            return form;
+        }
+
+        private static void ExtractZipToDirectory(string zipPath, string destPath)
+        {
+            try
+            {
+                Assembly compressionFs = Assembly.LoadWithPartialName("System.IO.Compression.FileSystem");
+                if (compressionFs != null)
+                {
+                    Type zipFileType = compressionFs.GetType("System.IO.Compression.ZipFile");
+                    if (zipFileType != null)
+                    {
+                        MethodInfo method = zipFileType.GetMethod("ExtractToDirectory",
+                            new[] { typeof(string), typeof(string) });
+                        if (method != null)
+                        {
+                            method.Invoke(null, new object[] { zipPath, destPath });
+                            return;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = "powershell.exe";
+            psi.Arguments = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"Expand-Archive -LiteralPath '"
+                + zipPath.Replace("'", "''") + "' -DestinationPath '"
+                + destPath.Replace("'", "''") + "' -Force\"";
+            psi.UseShellExecute = false;
+            psi.CreateNoWindow = true;
+            using (Process p = Process.Start(psi))
+            {
+                p.WaitForExit();
+                if (p.ExitCode != 0)
+                {
+                    throw new Exception("Extraction failed with exit code " + p.ExitCode);
+                }
+            }
+        }
+
+        private static void CopySeedDataIfNeeded(string versionDir, string dataDir)
+        {
+            string seedDb = Path.Combine(versionDir, "data", "cost_dashboard.db");
+            string targetDb = Path.Combine(dataDir, "cost_dashboard.db");
+            if (File.Exists(seedDb) && !File.Exists(targetDb))
+            {
+                File.Copy(seedDb, targetDb);
+            }
+        }
+
+        private static void CleanupOldVersions(string currentVersionDir)
+        {
+            try
+            {
+                string appDataDir = Path.GetDirectoryName(currentVersionDir);
+                foreach (string dir in Directory.GetDirectories(appDataDir, "v*"))
+                {
+                    if (!dir.Equals(currentVersionDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { Directory.Delete(dir, true); }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
         }
 
         private static Process StartServer(string appDir, string nodeExe, string serverBundle, string dbPath, string uploadsDir, string logsDir, int port)

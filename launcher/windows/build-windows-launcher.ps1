@@ -2,7 +2,8 @@
 # encoding: utf8
 
 param(
-    [string]$OutputDir = (Join-Path $PSScriptRoot '..\..\dist-portable')
+    [string]$OutputDir = (Join-Path $PSScriptRoot '..\..\dist-portable'),
+    [switch]$Standalone
 )
 
 $ErrorActionPreference = 'Stop'
@@ -125,3 +126,49 @@ Remove-Item $tempSource -Force
 Remove-Item $tempAssemblyInfo -Force
 
 Write-Host "Launcher built: $output"
+
+if ($Standalone) {
+    Write-Host ""
+    Write-Host "=== Building Standalone EXE ==="
+
+    $tempExePath = Join-Path $env:TEMP 'Cost-Dashboard-Standalone.tmp.exe'
+    Copy-Item -Path $output -Destination $tempExePath -Force
+
+    $zipPath = Join-Path $env:TEMP "CostDashboard-payload-$version.zip"
+    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+
+    Write-Host "[1/3] Creating payload zip from portable files..."
+    $excludePatterns = @('Cost-Dashboard.exe', 'tools')
+    $includeItems = Get-ChildItem -LiteralPath $resolvedOutputDir | Where-Object {
+        $name = $_.Name
+        $excludePatterns -notcontains $name
+    }
+    Compress-Archive -Path $includeItems.FullName -DestinationPath $zipPath -Force
+
+    Write-Host "[2/3] Appending payload to exe..."
+    $zipStream = [System.IO.File]::OpenRead($zipPath)
+    $exeStream = New-Object System.IO.FileStream($tempExePath, 'Append', 'Write', 'None')
+
+    $buffer = New-Object byte[] 81920
+    while ($true) {
+        $read = $zipStream.Read($buffer, 0, $buffer.Length)
+        if ($read -eq 0) { break }
+        $exeStream.Write($buffer, 0, $read)
+    }
+
+    $sizeBytes = [System.BitConverter]::GetBytes([int64]$zipStream.Length)
+    $magicBytes = [System.Text.Encoding]::ASCII.GetBytes('CDSE')
+    $exeStream.Write($sizeBytes, 0, 8)
+    $exeStream.Write($magicBytes, 0, 4)
+
+    $exeStream.Close()
+    $zipStream.Close()
+
+    Write-Host "[3/3] Finalizing..."
+    Remove-Item $zipPath -Force
+    Move-Item -Path $tempExePath -Destination $output -Force
+
+    $exeSize = [math]::Round((Get-Item $output).Length / 1MB, 1)
+    Write-Host "Standalone exe created: $output ($exeSize MB)"
+    Write-Host "=== Standalone EXE Built ==="
+}
