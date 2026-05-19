@@ -9,5 +9,5 @@ uploads/*
 .env
 .env.*
 *.log
-.DS_Storex
+.DS_Store
 .trae/
