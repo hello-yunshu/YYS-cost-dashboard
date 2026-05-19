@@ -12,7 +12,6 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   cleanup:
@@ -31,9 +30,9 @@ jobs:
     needs: cleanup
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -47,7 +46,7 @@ jobs:
         run: |
           Compress-Archive -Path dist-portable/* -DestinationPath Cost-Dashboard-Windows-x64.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-Windows-x64
           path: Cost-Dashboard-Windows-x64.zip
@@ -57,9 +56,9 @@ jobs:
     needs: cleanup
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -72,7 +71,7 @@ jobs:
       - name: Build macOS DMG
         run: bash launcher/macos/build-macos-dmg.sh dist-portable
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-macOS-DMG
           path: dist-dmg/*.dmg
@@ -82,20 +81,20 @@ jobs:
     needs: cleanup
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '21'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - run: npm ci
 
@@ -116,7 +115,7 @@ jobs:
           VERSION=$(node -e "console.log(require('./package.json').version)")
           cp android/app/build/outputs/apk/release/app-release-unsigned.apk "Cost-Dashboard-Android-${VERSION}.apk"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Cost-Dashboard-Android-APK
           path: Cost-Dashboard-Android-*.apk
@@ -128,9 +127,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
 
@@ -148,7 +147,7 @@ jobs:
           git push -f origin "$TAG"
 
       - name: Create or Update Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
