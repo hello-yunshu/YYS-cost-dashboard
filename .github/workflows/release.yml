@@ -146,11 +146,28 @@ jobs:
           git tag -f "$TAG"
           git push -f origin "$TAG"
 
-      - name: Create or Update Release
+      - name: Generate release notes
+        id: notes
+        run: |
+          NOTES=$(gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/releases/generate-notes \
+            -f tag_name="${{ steps.version.outputs.tag }}" \
+            --jq '.body')
+          {
+            echo "notes<<RELEASE_EOF"
+            echo "$NOTES"
+            echo "RELEASE_EOF"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
+          body: ${{ steps.notes.outputs.notes }}
           files: |
             artifacts/Cost-Dashboard-Windows-x64/*.zip
             artifacts/Cost-Dashboard-macOS-DMG/*.dmg
