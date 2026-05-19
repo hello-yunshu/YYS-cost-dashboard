@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 # encoding: utf8
 
 param(
@@ -115,6 +115,7 @@ $assemblyInfoTemplate = Join-Path $PSScriptRoot 'AssemblyInfo.cs'
 $tempAssemblyInfo = Join-Path $resolvedOutputDir 'AssemblyInfo.cs.tmp'
 $assemblyInfoContent = Get-Content $assemblyInfoTemplate -Raw
 $assemblyInfoContent = $assemblyInfoContent.Replace('__VERSION__', $version)
+$assemblyInfoContent = $assemblyInfoContent.Replace('__COPYRIGHT_YEAR__', (Get-Date).Year.ToString())
 $assemblyInfoContent = $assemblyInfoContent.Replace('__GUID__', [guid]::NewGuid().ToString())
 [System.IO.File]::WriteAllText($tempAssemblyInfo, $assemblyInfoContent, [System.Text.Encoding]::UTF8)
 

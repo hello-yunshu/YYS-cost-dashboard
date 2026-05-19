@@ -1,16 +1,19 @@
 @echo off
 chcp 65001 >nul 2>&1
-title MTC Cost Dashboard - Stop
+title Cost Dashboard - Stop
 
 echo ============================================
-echo    Stopping MTC Cost Dashboard
+echo    Stopping Cost Dashboard
 echo ============================================
 echo.
 
+if "%PORT%"=="" set "PORT=3113"
+set /a STOP_PORT=%PORT%+1
+
 set "FOUND=0"
 
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3113 " ^| findstr "LISTENING"') do (
-    echo [INFO] Found process on port 3113, PID: %%a
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%PORT% " ^| findstr "LISTENING"') do (
+    echo [INFO] Found process on port %PORT%, PID: %%a
     taskkill /F /PID %%a >nul 2>&1
     if %errorlevel%==0 (
         echo [INFO] Process %%a terminated successfully.
@@ -20,8 +23,8 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3113 " ^| findstr "LISTENIN
     )
 )
 
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3114 " ^| findstr "LISTENING"') do (
-    echo [INFO] Found process on port 3114, PID: %%a
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%STOP_PORT% " ^| findstr "LISTENING"') do (
+    echo [INFO] Found process on port %STOP_PORT%, PID: %%a
     taskkill /F /PID %%a >nul 2>&1
     if %errorlevel%==0 (
         echo [INFO] Process %%a terminated successfully.
@@ -32,7 +35,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3114 " ^| findstr "LISTENIN
 )
 
 if "%FOUND%"=="0" (
-    echo [INFO] No process found on port 3113 or 3114.
+    echo [INFO] No process found on port %PORT% or %STOP_PORT%.
 )
 
 echo.

@@ -45,7 +45,7 @@ namespace CostDashboardLauncher
             }
         }
 
-        private static int GetPort()
+        internal static int GetPort()
         {
             string raw = Environment.GetEnvironmentVariable("PORT");
             int port;
@@ -59,7 +59,6 @@ namespace CostDashboardLauncher
 
     internal sealed class LauncherContext : ApplicationContext
     {
-        private const int DefaultPort = 3113;
         private const string AppTitle = "Cost Dashboard __VERSION__";
 
         private readonly NotifyIcon trayIcon;
@@ -103,7 +102,7 @@ namespace CostDashboardLauncher
             string nodeExe = Path.Combine(rootDir, "node", "win-x64", "node.exe");
             string serverBundle = Path.Combine(appDir, "server.bundle.js");
             string dbPath = Path.Combine(dataDir, "cost_dashboard.db");
-            port = GetPort();
+            port = Program.GetPort();
             url = "http://localhost:" + port;
 
             if (IsDashboardHealthy(url))
@@ -164,17 +163,6 @@ namespace CostDashboardLauncher
             ShouldRun = false;
         }
 
-        private static int GetPort()
-        {
-            string raw = Environment.GetEnvironmentVariable("PORT");
-            int port;
-            if (!string.IsNullOrWhiteSpace(raw) && int.TryParse(raw, out port) && port > 0 && port < 65536)
-            {
-                return port;
-            }
-            return DefaultPort;
-        }
-
         private static Process StartServer(string appDir, string nodeExe, string serverBundle, string dbPath, string uploadsDir, string logsDir, int port)
         {
             string logFile = Path.Combine(logsDir, "server.log");
@@ -215,14 +203,14 @@ namespace CostDashboardLauncher
         private NotifyIcon CreateTrayIcon()
         {
             ContextMenuStrip menu = new ContextMenuStrip();
-            menu.Items.Add("打开看板", null, delegate { OpenBrowser(url ?? ("http://localhost:" + DefaultPort)); });
+            menu.Items.Add("打开看板", null, delegate { OpenBrowser(url ?? ("http://localhost:" + Program.GetPort())); });
             menu.Items.Add("退出服务", null, delegate { ExitService(); });
 
             NotifyIcon icon = new NotifyIcon();
             icon.Text = AppTitle;
             icon.Icon = LoadAppIcon();
             icon.ContextMenuStrip = menu;
-            icon.DoubleClick += delegate { OpenBrowser(url ?? ("http://localhost:" + DefaultPort)); };
+            icon.DoubleClick += delegate { OpenBrowser(url ?? ("http://localhost:" + Program.GetPort())); };
             return icon;
         }
 
@@ -249,31 +237,40 @@ namespace CostDashboardLauncher
 
         private void StopServer()
         {
-            try
+            if (serverProcess != null && !serverProcess.HasExited)
             {
-                if (serverProcess != null && !serverProcess.HasExited)
+                try
                 {
-                    serverProcess.Kill();
-                    serverProcess.WaitForExit(3000);
+                    KillProcessTree(serverProcess.Id);
+                    serverProcess.WaitForExit(5000);
                 }
-            }
-            catch
-            {
-                // The server may already have exited; the port-based cleanup below is the fallback.
+                catch
+                {
+                }
             }
 
             foreach (int pid in GetListeningPids(port))
             {
                 try
                 {
-                    Process process = Process.GetProcessById(pid);
-                    process.Kill();
-                    process.WaitForExit(3000);
+                    KillProcessTree(pid);
                 }
                 catch
                 {
-                    // Ignore processes that disappear between netstat and taskkill.
                 }
+            }
+        }
+
+        private static void KillProcessTree(int pid)
+        {
+            ProcessStartInfo info = new ProcessStartInfo();
+            info.FileName = "taskkill";
+            info.Arguments = "/T /F /PID " + pid;
+            info.UseShellExecute = false;
+            info.CreateNoWindow = true;
+            using (Process taskkill = Process.Start(info))
+            {
+                taskkill.WaitForExit(3000);
             }
         }
 
@@ -327,7 +324,11 @@ namespace CostDashboardLauncher
 
         private static bool EndpointMatchesPort(string endpoint, int port)
         {
-            return endpoint.EndsWith(":" + port, StringComparison.OrdinalIgnoreCase);
+            int lastColon = endpoint.LastIndexOf(':');
+            if (lastColon < 0) return false;
+            string portPart = endpoint.Substring(lastColon + 1);
+            int epPort;
+            return int.TryParse(portPart, out epPort) && epPort == port;
         }
 
         private static bool WaitForDashboard(string baseUrl, int timeoutMs)
