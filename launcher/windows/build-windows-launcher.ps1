@@ -2,7 +2,7 @@
 # encoding: utf8
 
 param(
-    [string]$OutputDir = (Join-Path $PSScriptRoot '..\dist-portable')
+    [string]$OutputDir = (Join-Path $PSScriptRoot '..\..\dist-portable')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,7 +12,7 @@ $icon = Join-Path $PSScriptRoot 'CostDashboard.ico'
 $resolvedOutputDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputDir)
 $output = Join-Path $resolvedOutputDir 'Cost-Dashboard.exe'
 
-$packageJsonPath = Join-Path $PSScriptRoot '..\package.json'
+$packageJsonPath = Join-Path $PSScriptRoot '..\..\package.json'
 $packageJson = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
 $version = $packageJson.version.Trim()
 

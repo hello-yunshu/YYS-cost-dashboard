@@ -164,11 +164,11 @@ function copyInitialDataIfMissing() {
 }
 
 function buildWindowsLauncher() {
-  const launcherScript = path.resolve(ROOT, 'launcher', 'build-windows-launcher.ps1');
-  const toolsDir = path.resolve(DIST_PORTABLE, 'tools', 'launcher');
+  const launcherScript = path.resolve(ROOT, 'launcher', 'windows', 'build-windows-launcher.ps1');
+  const toolsDir = path.resolve(DIST_PORTABLE, 'tools', 'launcher', 'windows');
 
   fs.mkdirSync(toolsDir, { recursive: true });
-  copyRecursive(path.resolve(ROOT, 'launcher'), toolsDir);
+  copyRecursive(path.resolve(ROOT, 'launcher', 'windows'), toolsDir);
 
   if (process.platform !== 'win32') {
     console.warn('  Skipping launcher exe build: Windows is required to compile Cost-Dashboard.exe.');
@@ -182,6 +182,27 @@ function buildWindowsLauncher() {
   }
 
   run(`powershell -NoProfile -ExecutionPolicy Bypass -File "${launcherScript}" -OutputDir "${DIST_PORTABLE}"`);
+}
+
+function buildMacOSLauncher() {
+  const launcherScript = path.resolve(ROOT, 'launcher', 'macos', 'build-macos-launcher.sh');
+  const toolsDir = path.resolve(DIST_PORTABLE, 'tools', 'launcher', 'macos');
+
+  fs.mkdirSync(toolsDir, { recursive: true });
+  copyRecursive(path.resolve(ROOT, 'launcher', 'macos'), toolsDir);
+
+  if (process.platform !== 'darwin') {
+    console.warn('  Skipping macOS launcher build: macOS is required to compile .app bundle.');
+    console.warn('  On macOS, run: npm run build:launcher:macos');
+    return;
+  }
+
+  if (!fs.existsSync(launcherScript)) {
+    console.warn('  WARNING: macOS launcher build script not found:', launcherScript);
+    return;
+  }
+
+  run(`bash "${launcherScript}" "${DIST_PORTABLE}"`);
 }
 
 async function downloadNodePlatforms() {
@@ -229,13 +250,13 @@ async function downloadNodePlatforms() {
 async function main() {
   console.log('=== Cost Dashboard Portable Builder ===\n');
 
-  console.log('[Step 1/9] Building frontend...');
+  console.log('[Step 1/10] Building frontend...');
   run('npm run build:frontend');
 
-  console.log('\n[Step 2/9] Building server bundle...');
+  console.log('\n[Step 2/10] Building server bundle...');
   run('node build-server.js');
 
-  console.log('\n[Step 3/9] Creating directory structure...');
+  console.log('\n[Step 3/10] Creating directory structure...');
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'app'), { recursive: true });
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'data'), { recursive: true });
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'uploads'), { recursive: true });
@@ -243,12 +264,12 @@ async function main() {
   fs.mkdirSync(path.resolve(DIST_PORTABLE, 'node'), { recursive: true });
   copyInitialDataIfMissing();
 
-  console.log('\n[Step 4/9] Copying frontend dist...');
+  console.log('\n[Step 4/10] Copying frontend dist...');
   const frontendDest = path.resolve(DIST_PORTABLE, 'app/dist-frontend');
   if (fs.existsSync(frontendDest)) fs.rmSync(frontendDest, { recursive: true });
   copyRecursive(path.resolve(ROOT, 'dist'), frontendDest);
 
-  console.log('\n[Step 5/9] Copying sql-wasm.wasm...');
+  console.log('\n[Step 5/10] Copying sql-wasm.wasm...');
   const wasmSrc = path.resolve(ROOT, 'node_modules/sql.js/dist/sql-wasm.wasm');
   const wasmDest = path.resolve(DIST_PORTABLE, 'app/sql-wasm.wasm');
   if (fs.existsSync(wasmSrc)) {
@@ -257,7 +278,7 @@ async function main() {
     console.warn('  WARNING: sql-wasm.wasm not found at', wasmSrc);
   }
 
-  console.log('\n[Step 6/9] Copying db-init.js...');
+  console.log('\n[Step 6/10] Copying db-init.js...');
   const dbInitSrc = path.resolve(ROOT, 'server/db/init.js');
   const dbInitDest = path.resolve(DIST_PORTABLE, 'app/db-init.js');
   if (fs.existsSync(dbInitSrc)) {
@@ -266,10 +287,10 @@ async function main() {
     console.warn('  WARNING: server/db/init.js not found');
   }
 
-  console.log('\n[Step 7/9] Downloading Node.js for all platforms...');
+  console.log('\n[Step 7/10] Downloading Node.js for all platforms...');
   await downloadNodePlatforms();
 
-  console.log('\n[Step 8/9] Copying scripts...');
+  console.log('\n[Step 8/10] Copying scripts...');
   const scriptsDest = path.resolve(DIST_PORTABLE);
   const scriptsSrc = path.resolve(ROOT, 'scripts');
   if (fs.existsSync(scriptsSrc)) {
@@ -278,7 +299,7 @@ async function main() {
     console.warn('  WARNING: scripts/ directory not found');
   }
 
-  console.log('\n[Step 8.5/9] Creating package.json for ES module support...');
+  console.log('\n[Step 9/10] Creating package.json for ES module support...');
   const packageJsonPath = path.resolve(DIST_PORTABLE, 'package.json');
   const packageJsonContent = JSON.stringify({ type: 'module' }, null, 2);
   
@@ -295,14 +316,16 @@ async function main() {
     console.log('  package.json created.');
   }
 
-  console.log('\n[Step 9/9] Building Windows launcher...');
+  console.log('\n[Step 10/10] Building platform launchers...');
   buildWindowsLauncher();
+  buildMacOSLauncher();
 
   console.log('\n=== Build Complete! ===');
   console.log(`Output directory: ${DIST_PORTABLE}`);
   console.log('\nDirectory structure:');
   console.log('  dist-portable/');
   console.log('    Cost-Dashboard.exe - Windows launcher (when built on Windows)');
+  console.log('    Cost Dashboard.app - macOS launcher (when built on macOS)');
   console.log('    package.json       - ES module support configuration');
   console.log('    app/              - Application files');
   console.log('      server.bundle.js');
@@ -322,7 +345,10 @@ async function main() {
   console.log('    stop.bat          - Windows stop');
   console.log('    stop.sh           - macOS/Linux stop');
   console.log('    README.txt        - User documentation');
-  console.log('    tools/launcher/   - Launcher source and build script');
+  console.log('    tools/launcher/   - Launcher source and build scripts');
+  console.log('\nAdditional build targets:');
+  console.log('  npm run build:dmg      - Build macOS DMG installer');
+  console.log('  npm run build:android  - Build Android APK');
 }
 
 main().catch((err) => {
