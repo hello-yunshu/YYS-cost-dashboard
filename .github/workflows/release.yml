@@ -39,8 +39,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Build portable (Windows only)
-        run: node build-portable.js --platform win-x64
+      - name: Build Windows standalone EXE
+        run: npm run build:exe
 
       - name: Verify standalone exe
         run: |
@@ -118,11 +118,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Build portable (macOS only)
-        run: node build-portable.js --platform macos-arm64,macos-x64
-
-      - name: Build macOS DMG
-        run: bash launcher/macos/build-macos-dmg.sh dist-portable
+      - name: Build macOS standalone DMG
+        run: npm run build:dmg
 
       - name: Verify macOS build
         run: |
@@ -188,6 +185,92 @@ jobs:
         with:
           name: Cost-Dashboard-macOS-DMG
           path: dist-dmg/*.dmg
+          retention-days: 7
+
+  build-linux:
+    needs: cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build Linux portable
+        run: npm run build:portable:linux
+
+      - name: Package Linux portable
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          cd dist-portable
+          zip -r ../Cost-Dashboard-Linux-x64.zip . -x 'node/macos*' -x 'node/win*'
+
+      - name: Verify Linux build
+        run: |
+          LINUX_ZIP="Cost-Dashboard-Linux-x64.zip"
+          if [ ! -f "$LINUX_ZIP" ]; then echo "::error::Linux zip not found" && exit 1; fi
+          LINUX_SIZE=$(du -m "$LINUX_ZIP" | cut -f1)
+          echo "Linux: $LINUX_ZIP ($LINUX_SIZE MB)"
+          if [ "$LINUX_SIZE" -lt 80 ]; then echo "::error::Linux zip too small ($LINUX_SIZE MB), expected >80 MB" && exit 1; fi
+          if [ "$LINUX_SIZE" -gt 400 ]; then echo "::error::Linux zip too large ($LINUX_SIZE MB), expected <400 MB" && exit 1; fi
+          REQUIRED_PATHS=(
+            "app/server.bundle.js"
+            "app/dist-frontend/index.html"
+            "node/linux-x64/bin/node"
+            "start.sh"
+            "stop.sh"
+            "README.txt"
+          )
+          for p in "${REQUIRED_PATHS[@]}"; do
+            if ! unzip -l "$LINUX_ZIP" | grep -q "$p"; then echo "::error::Missing in zip: $p" && exit 1; fi
+            echo "  OK: $p"
+          done
+          echo "Linux build verification passed"
+
+      - name: Smoke test Linux build
+        run: |
+          export DB_MODE=sqljs
+          export DB_PATH="$PWD/dist-portable/data/cost_dashboard.db"
+          export UPLOADS_DIR="$PWD/dist-portable/uploads"
+          export NODE_ENV=production
+          export PORT=3113
+          mkdir -p dist-portable/data dist-portable/uploads dist-portable/logs
+          chmod +x dist-portable/node/linux-x64/bin/node
+          dist-portable/node/linux-x64/bin/node dist-portable/app/server.bundle.js &
+          SERVER_PID=$!
+          echo "Server PID: $SERVER_PID"
+          HEALTHY=false
+          for i in $(seq 1 30); do
+            sleep 1
+            if curl -sf http://localhost:3113/api/health 2>/dev/null | grep -q '"success":true'; then
+              HEALTHY=true
+              echo "  OK: /api/health returned 200"
+              break
+            fi
+            echo "  Waiting... (${i}s)"
+          done
+          if [ "$HEALTHY" = "true" ]; then
+            if curl -sf http://localhost:3113/api/months 2>/dev/null > /dev/null; then
+              echo "  OK: /api/months responded"
+            fi
+          fi
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+          lsof -ti :3113 2>/dev/null | xargs -r kill 2>/dev/null || true
+          if [ "$HEALTHY" = "false" ]; then
+            echo "::error::Smoke test failed: /api/health did not respond within 30s"
+            exit 1
+          fi
+          echo "Linux smoke test passed"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Cost-Dashboard-Linux-x64
+          path: Cost-Dashboard-Linux-x64.zip
           retention-days: 7
 
   build-android:
@@ -266,7 +349,7 @@ jobs:
           retention-days: 7
 
   release:
-    needs: [build-windows, build-macos, build-android]
+    needs: [build-windows, build-macos, build-linux, build-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -302,6 +385,7 @@ jobs:
           echo "Verifying release artifacts..."
           check_artifact "artifacts/Cost-Dashboard-Windows-x64/*.exe" 30 300 "Windows exe"
           check_artifact "artifacts/Cost-Dashboard-macOS-DMG/*.dmg" 80 400 "macOS DMG"
+          check_artifact "artifacts/Cost-Dashboard-Linux-x64/*.zip" 80 400 "Linux zip"
           check_artifact "artifacts/Cost-Dashboard-Android-APK/*.apk" 10 100 "Android APK"
           if [ -n "$ERRORS" ]; then
             echo -e "::error::Artifact verification failed:\n$ERRORS"
@@ -348,4 +432,5 @@ jobs:
           files: |
             artifacts/Cost-Dashboard-Windows-x64/*.exe
             artifacts/Cost-Dashboard-macOS-DMG/*.dmg
+            artifacts/Cost-Dashboard-Linux-x64/*.zip
             artifacts/Cost-Dashboard-Android-APK/*.apk
