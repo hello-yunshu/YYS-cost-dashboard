@@ -15,8 +15,10 @@ import { formatPercent, formatCurrency } from '../../utils/format';
 
 export default function Annual() {
   const { annualData, selectedYear, annualLoading, fetchAnnualData, fetchMonths, months } = useDashboardStore();
-  const { getRiskThreshold } = useSettingsStore();
+  const { getRiskThreshold, getAmountUnit } = useSettingsStore();
   const riskThreshold = getRiskThreshold();
+  const amountUnit = getAmountUnit();
+  const currencyUnit = amountUnit === 'yi' ? '亿元' : amountUnit === 'yuan' ? '元' : '万元';
   const [branchTab, setBranchTab] = useState('profitRate');
   const [costTab, setCostTab] = useState('revenue');
   const [analysisTab, setAnalysisTab] = useState('radar');
@@ -74,7 +76,7 @@ export default function Annual() {
       {
         title: '当前利润',
         value: yearSummary.currentProfit,
-        unit: '万元',
+        unit: currencyUnit,
         type: yearSummary.currentProfit >= 0 ? 'success' : 'danger',
         trend: yearSummary.profitChangePercent,
       },
@@ -193,7 +195,7 @@ export default function Annual() {
             <BranchTrendChart
               branchTrends={branchTrends}
               valueKey="currentProfit"
-              valueFormatter={(v) => formatCurrency(v)}
+              valueFormatter={(v) => formatCurrency(v, amountUnit)}
             />
           )}
         </div>
@@ -296,13 +298,13 @@ export default function Annual() {
                       {formatPercent(c.expectedProfitRate)}
                     </td>
                     <td className={`py-2.5 px-3 text-right ${c.currentProfit >= 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      {formatCurrency(c.currentProfit)}
+                      {formatCurrency(c.currentProfit, amountUnit)}
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-300">
-                      {formatCurrency(c.expectedProfit)}
+                      {formatCurrency(c.expectedProfit, amountUnit)}
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-300">
-                      {formatCurrency(c.selfOperatedValue)}
+                      {formatCurrency(c.selfOperatedValue, amountUnit)}
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-300">
                       {formatPercent(c.collectionRate)}

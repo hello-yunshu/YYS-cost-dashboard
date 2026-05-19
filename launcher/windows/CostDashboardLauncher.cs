@@ -465,6 +465,11 @@ namespace CostDashboardLauncher
         {
             ContextMenuStrip menu = new ContextMenuStrip();
             menu.Items.Add("打开看板", null, delegate { OpenBrowser(url ?? ("http://localhost:" + Program.GetPort())); });
+            menu.Items.Add("-");
+            ToolStripMenuItem moreMenu = new ToolStripMenuItem("更多");
+            moreMenu.DropDownItems.Add("卸载", null, delegate { Uninstall(); });
+            menu.Items.Add(moreMenu);
+            menu.Items.Add("-");
             menu.Items.Add("退出服务", null, delegate { ExitService(); });
 
             NotifyIcon icon = new NotifyIcon();
@@ -486,6 +491,57 @@ namespace CostDashboardLauncher
             {
                 return SystemIcons.Application;
             }
+        }
+
+        private void Uninstall()
+        {
+            DialogResult result = MessageBox.Show(
+                "确定要完全卸载 Cost Dashboard 吗？\n\n"
+                + "将删除以下内容：\n"
+                + "• 应用程序文件\n"
+                + "• 数据库及所有数据\n"
+                + "• 上传文件\n"
+                + "• 日志文件\n\n"
+                + "此操作不可恢复！",
+                AppTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+            if (result != DialogResult.Yes) return;
+
+            StopServer();
+            trayIcon.Visible = false;
+
+            string appDataDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppDataName);
+
+            if (Program.IsStandaloneMode())
+            {
+                string exePath = Application.ExecutablePath;
+                string deleteCmd = "cmd.exe";
+                string deleteArgs = "/c ping localhost -n 3 > nul & rmdir /s /q \""
+                    + appDataDir + "\" & del /f /q \"" + exePath + "\"";
+
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = deleteCmd;
+                psi.Arguments = deleteArgs;
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                try { Process.Start(psi); } catch { }
+            }
+            else
+            {
+                try
+                {
+                    if (Directory.Exists(appDataDir))
+                    {
+                        Directory.Delete(appDataDir, true);
+                    }
+                }
+                catch { }
+            }
+
+            ExitCode = 0;
+            ExitThread();
         }
 
         private void ExitService()

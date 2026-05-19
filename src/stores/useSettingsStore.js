@@ -61,6 +61,10 @@ const useSettingsStore = create((set, get) => ({
     const { riskThreshold } = get().settings;
     return riskThreshold / 100;
   },
+
+  getAmountUnit: () => {
+    return get().settings.amountUnit || DEFAULT_SETTINGS.amountUnit;
+  },
 }));
 
 export default useSettingsStore;

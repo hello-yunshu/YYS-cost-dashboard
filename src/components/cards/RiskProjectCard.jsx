@@ -1,6 +1,5 @@
 import clsx from 'clsx';
 import { formatPercent } from '../../utils/format';
-import { RISK_THRESHOLD } from '../../utils/constants';
 
 export default function RiskProjectCard({ project, onClick, riskThreshold = 0.05 }) {
   const profitRate = project.currentProfitRate;

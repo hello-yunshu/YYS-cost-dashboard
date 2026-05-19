@@ -27,8 +27,9 @@ export default function Logo({ className = 'w-8 h-8' }) {
         <rect x="6" y="6" width="52" height="52" rx="15" fill={`url(#${gradientId})`}/>
         <text
           x="32"
-          y="41"
+          y="32"
           textAnchor="middle"
+          dominantBaseline="central"
           fontFamily="Microsoft YaHei UI, Microsoft YaHei, PingFang SC, Noto Sans SC, sans-serif"
           fontSize="34"
           fontWeight="800"

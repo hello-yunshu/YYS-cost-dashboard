@@ -6,7 +6,7 @@ Build a Windows-only portable package on Windows:
 
 ```powershell
 npm install
-npm run build:portable:win
+npm run build:win
 ```
 
 Run `npm install` once before the first build. Otherwise the frontend build tool

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import useDashboardStore from '../../stores/useDashboardStore';
 
 export default function MonthManage() {
   const [months, setMonths] = useState([]);
@@ -8,6 +9,7 @@ export default function MonthManage() {
   const [deletingYear, setDeletingYear] = useState(null);
   const [message, setMessage] = useState(null);
   const msgTimerRef = useRef(null);
+  const fetchDashboardMonths = useDashboardStore((s) => s.fetchMonths);
 
   const fetchMonths = () => {
     setLoading(true);
@@ -36,6 +38,7 @@ export default function MonthManage() {
     try {
       await axios.delete(`/api/months/${yearMonth}`);
       setMonths((prev) => prev.filter((m) => m.yearMonth !== yearMonth));
+      fetchDashboardMonths();
       showMessage('success', `已删除 ${yearMonth} 的数据`);
     } catch {
       showMessage('error', '删除失败，请重试');
@@ -52,6 +55,7 @@ export default function MonthManage() {
     try {
       const { data } = await axios.delete(`/api/months/year/${year}`);
       setMonths((prev) => prev.filter((m) => !m.yearMonth.startsWith(`${year}-`)));
+      fetchDashboardMonths();
       showMessage('success', data.message || `已删除 ${year} 年数据`);
     } catch (err) {
       showMessage('error', err.response?.data?.message || '删除失败，请重试');

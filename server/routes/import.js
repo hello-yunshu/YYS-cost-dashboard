@@ -125,7 +125,11 @@ router.post('/confirm', async (req, res, next) => {
 
     const result = await importData(monthParsed, yearMonth, logId);
 
-    if (Object.keys(preview.parsedByMonth || {}).length <= 1) {
+    if (preview.parsedByMonth && preview.parsedByMonth[yearMonth]) {
+      delete preview.parsedByMonth[yearMonth];
+    }
+
+    if (Object.keys(preview.parsedByMonth || {}).length === 0) {
       deletePreview(previewId);
     }
 

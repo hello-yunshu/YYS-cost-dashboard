@@ -11,8 +11,10 @@ import CostTable from '../../components/tables/CostTable';
 export default function BranchView() {
   const { id } = useParams();
   const { branchDetail, selectedMonth, loading, fetchBranchDetail } = useDashboardStore();
-  const { getRiskThreshold } = useSettingsStore();
+  const { getRiskThreshold, getAmountUnit } = useSettingsStore();
   const riskThreshold = getRiskThreshold();
+  const amountUnit = getAmountUnit();
+  const currencyUnit = amountUnit === 'yi' ? '亿元' : amountUnit === 'yuan' ? '元' : '万元';
 
   useEffect(() => {
     if (id) fetchBranchDetail(id, selectedMonth);
@@ -29,6 +31,7 @@ export default function BranchView() {
         value: s.currentProfitRate,
         unit: '%',
         type: s.currentProfitRate >= riskThreshold ? 'success' : s.currentProfitRate >= 0 ? 'warning' : 'danger',
+        trend: (s.currentProfitRate - (s.expectedProfitRate || 0)) * 100,
       },
       {
         title: '预期利润率',
@@ -39,13 +42,13 @@ export default function BranchView() {
       {
         title: '当前利润',
         value: s.currentProfit,
-        unit: '万元',
+        unit: currencyUnit,
         type: s.currentProfit >= 0 ? 'success' : 'danger',
       },
       {
         title: '预期利润',
         value: s.expectedProfit,
-        unit: '万元',
+        unit: currencyUnit,
         type: 'default',
       },
     ];

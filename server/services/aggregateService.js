@@ -30,15 +30,18 @@ export function calculateRates(row) {
   const result = { ...row };
 
   if (result.actual_value && result.actual_value !== 0) {
-    result.actual_profit_rate = (result.actual_value - result.actual_cost) / result.actual_value;
+    const cost = result.actual_cost ?? 0;
+    result.actual_profit_rate = (result.actual_value - cost) / result.actual_value;
   }
 
   if (result.total_expected_value && result.total_expected_value !== 0) {
-    result.total_expected_profit_rate = (result.total_expected_value - result.total_expected_cost) / result.total_expected_value;
+    const totalCost = result.total_expected_cost ?? 0;
+    result.total_expected_profit_rate = (result.total_expected_value - totalCost) / result.total_expected_value;
   }
 
   if (result.later_expected_value && result.later_expected_value !== 0) {
-    result.later_forecast_profit_rate = (result.later_expected_value - result.later_forecast_cost) / result.later_expected_value;
+    const laterCost = result.later_forecast_cost ?? 0;
+    result.later_forecast_profit_rate = (result.later_expected_value - laterCost) / result.later_expected_value;
   }
 
   if (result.actual_cost && result.actual_cost !== 0) {
@@ -54,7 +57,8 @@ export function calculateRates(row) {
   }
 
   if (result.contract_self && result.contract_self !== 0) {
-    result.bid_profit_rate = (result.contract_self - result.bid_cost_self) / result.contract_self;
+    const bidCost = result.bid_cost_self ?? 0;
+    result.bid_profit_rate = (result.contract_self - bidCost) / result.contract_self;
   }
 
   result.unreceived = (result.receivable || 0) - (result.received || 0);
