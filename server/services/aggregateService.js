@@ -31,8 +31,8 @@ export function calculateRates(row) {
     result.later_forecast_profit_rate = (result.later_expected_value - result.later_forecast_cost) / result.later_expected_value;
   }
 
-  if (result.actual_value && result.actual_value !== 0) {
-    result.measurement_confirm_rate = result.owner_confirmed_value / result.actual_value;
+  if (result.actual_cost && result.actual_cost !== 0) {
+    result.measurement_confirm_rate = result.owner_confirmed_value / result.actual_cost;
   }
 
   if (result.actual_value && result.actual_value !== 0) {

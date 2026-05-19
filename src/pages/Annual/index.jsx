@@ -260,7 +260,7 @@ export default function Annual() {
             <BranchRadarChart monthlyData={monthlyData} />
           )}
           {analysisTab === 'scatter' && (
-            <BranchScatterChart monthlyData={monthlyData} />
+            <BranchScatterChart monthlyData={monthlyData} riskThreshold={riskThreshold} />
           )}
         </div>
       </div>

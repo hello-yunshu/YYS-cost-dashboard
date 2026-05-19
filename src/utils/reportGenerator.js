@@ -31,8 +31,8 @@ const COLORS = {
   headerText: '#ffffff',
 };
 
-function profitRateColor(rate) {
-  if (rate >= 0.05) return COLORS.success;
+function profitRateColor(rate, riskThreshold = 0.05) {
+  if (rate >= riskThreshold) return COLORS.success;
   if (rate >= 0) return COLORS.warning;
   return COLORS.danger;
 }
@@ -57,16 +57,16 @@ function buildAnalysisBlock(title, items) {
   ];
 }
 
-function analyzeMonthlyData(summary, branches) {
+function analyzeMonthlyData(summary, branches, riskThreshold = 0.05) {
   const items = [];
   const rate = summary.currentProfitRate;
   const expected = summary.expectedProfitRate;
   const diff = rate - expected;
 
-  if (rate >= 0.05) {
-    items.push(`当前利润率 ${formatPercent(rate)}，达到预期目标（≥5%），整体经营状况良好。`);
+  if (rate >= riskThreshold) {
+    items.push(`当前利润率 ${formatPercent(rate)}，达到预期目标（≥${(riskThreshold * 100).toFixed(0)}%），整体经营状况良好。`);
   } else if (rate >= 0) {
-    items.push(`当前利润率 ${formatPercent(rate)}，低于5%目标线，需关注成本控制。`);
+    items.push(`当前利润率 ${formatPercent(rate)}，低于${(riskThreshold * 100).toFixed(0)}%目标线，需关注成本控制。`);
   } else {
     items.push(`当前利润率 ${formatPercent(rate)}，处于亏损状态，需立即分析原因并采取措施。`);
   }
@@ -76,7 +76,7 @@ function analyzeMonthlyData(summary, branches) {
     items.push(`当前利润率${direction}预期 ${formatPercent(Math.abs(diff))}，${diff > 0 ? '表现优于预期' : '存在改善空间'}。`);
   }
 
-  const aboveTarget = branches.filter((b) => (b.currentProfitRate || 0) >= 0.05);
+  const aboveTarget = branches.filter((b) => (b.currentProfitRate || 0) >= riskThreshold);
   const belowZero = branches.filter((b) => (b.currentProfitRate || 0) < 0);
   if (aboveTarget.length > 0) {
     items.push(`${aboveTarget.length} 个分公司达到利润率目标：${aboveTarget.map((b) => b.branchName).join('、')}。`);
@@ -95,15 +95,15 @@ function analyzeMonthlyData(summary, branches) {
   return items;
 }
 
-function analyzeAnnualData(summary, monthlyData) {
+function analyzeAnnualData(summary, monthlyData, riskThreshold = 0.05) {
   const items = [];
   const rate = summary.currentProfitRate;
   const change = summary.profitRateChange;
 
-  if (rate >= 0.05) {
+  if (rate >= riskThreshold) {
     items.push(`年末利润率 ${formatPercent(rate)}，整体经营状况良好。`);
   } else if (rate >= 0) {
-    items.push(`年末利润率 ${formatPercent(rate)}，低于5%目标线。`);
+    items.push(`年末利润率 ${formatPercent(rate)}，低于${(riskThreshold * 100).toFixed(0)}%目标线。`);
   } else {
     items.push(`年末利润率 ${formatPercent(rate)}，处于亏损状态。`);
   }
@@ -142,9 +142,9 @@ function analyzeAnnualData(summary, monthlyData) {
   return items;
 }
 
-function buildKpiSection(summary, isAnnual) {
+function buildKpiSection(summary, isAnnual, riskThreshold = 0.05) {
   const kpis = [
-    { label: '当前利润率', value: formatPercent(summary.currentProfitRate), color: profitRateColor(summary.currentProfitRate) },
+    { label: '当前利润率', value: formatPercent(summary.currentProfitRate), color: profitRateColor(summary.currentProfitRate, riskThreshold) },
     { label: '预期利润率', value: formatPercent(summary.expectedProfitRate), color: COLORS.primary },
     { label: '当前利润', value: formatCurrency(summary.currentProfit), color: profitColor(summary.currentProfit) },
     { label: '预期利润', value: formatCurrency(summary.expectedProfit), color: COLORS.primary },
@@ -210,7 +210,7 @@ function buildChartSection(title, imageDataUrl, subtitle) {
   return content;
 }
 
-function buildBranchTable(branches) {
+function buildBranchTable(branches, riskThreshold = 0.05) {
   const header = ['分公司', '当前利润率', '预期利润率', '当前利润', '预期利润', '自营产值', '收款率'];
   const body = [header.map((h) => ({ text: h, style: 'tableHeader' }))];
 
@@ -218,7 +218,7 @@ function buildBranchTable(branches) {
     const bgColor = idx % 2 === 0 ? '#ffffff' : COLORS.bgGray;
     body.push([
       { text: b.branchName || '', style: 'tableCell', fillColor: bgColor },
-      { text: formatPercent(b.currentProfitRate), style: 'tableCell', alignment: 'right', color: profitRateColor(b.currentProfitRate), fillColor: bgColor },
+      { text: formatPercent(b.currentProfitRate), style: 'tableCell', alignment: 'right', color: profitRateColor(b.currentProfitRate, riskThreshold), fillColor: bgColor },
       { text: formatPercent(b.expectedProfitRate), style: 'tableCell', alignment: 'right', fillColor: bgColor },
       { text: formatCurrency(b.currentProfit), style: 'tableCell', alignment: 'right', color: profitColor(b.currentProfit), fillColor: bgColor },
       { text: formatCurrency(b.expectedProfit), style: 'tableCell', alignment: 'right', fillColor: bgColor },
@@ -247,7 +247,7 @@ function buildBranchTable(branches) {
   };
 }
 
-function buildMonthlyTable(monthlyData) {
+function buildMonthlyTable(monthlyData, riskThreshold = 0.05) {
   const header = ['月份', '当前利润率', '预期利润率', '当前利润', '预期利润', '自营产值', '收款率'];
   const body = [header.map((h) => ({ text: h, style: 'tableHeader' }))];
 
@@ -257,7 +257,7 @@ function buildMonthlyTable(monthlyData) {
     const bgColor = idx % 2 === 0 ? '#ffffff' : COLORS.bgGray;
     body.push([
       { text: monthLabel, style: 'tableCell', bold: true, fillColor: bgColor },
-      { text: formatPercent(c.currentProfitRate), style: 'tableCell', alignment: 'right', color: profitRateColor(c.currentProfitRate), fillColor: bgColor },
+      { text: formatPercent(c.currentProfitRate), style: 'tableCell', alignment: 'right', color: profitRateColor(c.currentProfitRate, riskThreshold), fillColor: bgColor },
       { text: formatPercent(c.expectedProfitRate), style: 'tableCell', alignment: 'right', fillColor: bgColor },
       { text: formatCurrency(c.currentProfit), style: 'tableCell', alignment: 'right', color: profitColor(c.currentProfit), fillColor: bgColor },
       { text: formatCurrency(c.expectedProfit), style: 'tableCell', alignment: 'right', fillColor: bgColor },
@@ -350,7 +350,7 @@ function getDocDefinition(reportTitle, content) {
   };
 }
 
-export async function generateMonthlyReport(overview, selectedMonth) {
+export async function generateMonthlyReport(overview, selectedMonth, riskThreshold = 0.05) {
   await loadFonts();
 
   const summary = overview.company || overview.summary || overview;
@@ -368,11 +368,11 @@ export async function generateMonthlyReport(overview, selectedMonth) {
 
   const chartImages = await renderCharts(chartDefs);
 
-  const analysisItems = analyzeMonthlyData(summary, branches);
+  const analysisItems = analyzeMonthlyData(summary, branches, riskThreshold);
 
   const content = [
     ...buildCoverPage('月度报告', monthLabel, `数据期间：${monthLabel}`),
-    buildKpiSection(summary, false),
+    buildKpiSection(summary, false, riskThreshold),
     ...buildChartSection('利润率对比', chartImages[0], '各分公司当前利润率与预期利润率'),
     ...buildChartSection('利润额对比', chartImages[1], '各分公司当前利润与预期利润'),
     { text: '', pageBreak: 'after' },
@@ -382,7 +382,7 @@ export async function generateMonthlyReport(overview, selectedMonth) {
     { text: '', pageBreak: 'after' },
     ...buildAnalysisBlock('数据分析', analysisItems),
     { text: '分公司汇总', style: 'sectionTitle', margin: [0, 10, 0, 6] },
-    buildBranchTable(branches),
+    buildBranchTable(branches, riskThreshold),
   ];
 
   const pdfMake = (await import('pdfmake/build/pdfmake')).default;
@@ -399,7 +399,7 @@ export async function generateMonthlyReport(overview, selectedMonth) {
   URL.revokeObjectURL(url);
 }
 
-export async function generateAnnualReport(annualData, selectedYear) {
+export async function generateAnnualReport(annualData, selectedYear, riskThreshold = 0.05) {
   await loadFonts();
 
   const monthlyData = annualData?.monthlyData || [];
@@ -439,16 +439,16 @@ export async function generateAnnualReport(annualData, selectedYear) {
     { option: getCollectionTrendOption(monthlyData), width: 780, height: 400 },
     { option: getCostCompositionOption(monthlyData, monthlyData[monthlyData.length - 1]?.month), width: 780, height: 400 },
     { option: getBranchRadarOption(monthlyData), width: 780, height: 400 },
-    { option: getBranchScatterOption(monthlyData), width: 780, height: 400 },
+    { option: getBranchScatterOption(monthlyData, riskThreshold), width: 780, height: 400 },
   ];
 
   const chartImages = await renderCharts(chartDefs);
 
-  const analysisItems = analyzeAnnualData(summary, monthlyData);
+  const analysisItems = analyzeAnnualData(summary, monthlyData, riskThreshold);
 
   const content = [
     ...buildCoverPage('年度报告', `${selectedYear} 年度`, `数据期间：${dateRange}`),
-    buildKpiSection(summary, true),
+    buildKpiSection(summary, true, riskThreshold),
     ...buildChartSection('利润率月度趋势', chartImages[0], '全公司当前利润率与预期利润率变化'),
     ...buildChartSection('利润额月度趋势', chartImages[1], '全公司当前利润与预期利润变化'),
     { text: '', pageBreak: 'after' },
@@ -465,7 +465,7 @@ export async function generateAnnualReport(annualData, selectedYear) {
     ...buildAnalysisBlock('年度数据分析', analysisItems),
     { text: '月度数据对比', style: 'sectionTitle', margin: [0, 10, 0, 6] },
     { text: '各月关键指标一览', fontSize: 9, color: COLORS.textLight, margin: [0, 0, 0, 6] },
-    buildMonthlyTable(monthlyData),
+    buildMonthlyTable(monthlyData, riskThreshold),
   ];
 
   const pdfMake = (await import('pdfmake/build/pdfmake')).default;

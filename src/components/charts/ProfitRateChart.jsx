@@ -4,7 +4,7 @@ import ReactECharts from 'echarts-for-react';
 import useThemeStore from '../../stores/useThemeStore';
 import { CHART_COLORS } from '../../utils/constants';
 
-export default function ProfitRateChart({ data = [], onBranchClick }) {
+export default function ProfitRateChart({ data = [], onBranchClick, riskThreshold = 0.05 }) {
   const { resolvedTheme } = useThemeStore();
   const isDark = resolvedTheme === 'dark';
   const chartRef = useRef(null);
@@ -103,13 +103,13 @@ export default function ProfitRateChart({ data = [], onBranchClick }) {
               width: 2,
             },
             label: {
-              formatter: '风险阈值 5%',
+              formatter: `风险阈值 ${(riskThreshold * 100).toFixed(0)}%`,
               color: isDark ? '#fbbf24' : CHART_COLORS.warning,
               fontSize: 11,
               fontWeight: 'bold',
               position: 'insideStartTop',
             },
-            data: [{ xAxis: 0.05 }],
+            data: [{ xAxis: riskThreshold }],
           },
         },
         {
@@ -127,7 +127,7 @@ export default function ProfitRateChart({ data = [], onBranchClick }) {
         },
       ],
     };
-  }, [data, isDark]);
+  }, [data, isDark, riskThreshold]);
 
   const handleChartReady = useCallback((chart) => {
     if (!chart || !onBranchClick) return;

@@ -11,14 +11,19 @@ export async function getDao() {
   initPromise = (async () => {
     if (daoInstance) return daoInstance;
 
-    if (config.db.mode === 'sqljs') {
-      daoInstance = new SqlJsDao();
-    } else {
-      throw new Error(`Unsupported DB mode: ${config.db.mode}`);
-    }
+    try {
+      if (config.db.mode === 'sqljs') {
+        daoInstance = new SqlJsDao();
+      } else {
+        throw new Error(`Unsupported DB mode: ${config.db.mode}`);
+      }
 
-    await daoInstance.init(config.db.path, config.sqljs.wasmPath);
-    return daoInstance;
+      await daoInstance.init(config.db.path, config.sqljs.wasmPath);
+      return daoInstance;
+    } catch (err) {
+      initPromise = null;
+      throw err;
+    }
   })();
 
   return initPromise;

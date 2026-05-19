@@ -35,7 +35,7 @@ app.get('/api/health', (req, res) => {
 const staticDir = config.static.dir;
 if (fs.existsSync(staticDir)) {
   app.use(express.static(staticDir));
-  app.get('*', (req, res) => {
+  app.get('{*path}', (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(staticDir, 'index.html'));
     }

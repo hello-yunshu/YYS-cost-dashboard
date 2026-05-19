@@ -24,10 +24,6 @@ const SAMPLE_PROJECTS = {
     { name: '槟城桥梁工程', is_online: 1 },
     { name: '柔佛工业厂房项目', is_online: 1 },
   ],
-  '北非公司': [
-    { name: '阿尔及利亚住房建设项目', is_online: 1 },
-    { name: '摩洛哥光伏电站项目', is_online: 1 },
-  ],
   '装饰公司': [
     { name: '五星级酒店装修项目', is_online: 1 },
     { name: '商业综合体精装修工程', is_online: 1 },

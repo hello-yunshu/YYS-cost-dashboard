@@ -1,6 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+
+  --font-display: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
+  --font-body: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
 
 @layer base {
   :root {
@@ -69,7 +84,7 @@
   }
 
   .card-hover {
-    @apply card hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600;
+    @apply bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600;
   }
 
   .btn-primary {
@@ -90,19 +105,19 @@
   }
 
   .badge-success {
-    @apply badge bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400;
   }
 
   .badge-danger {
-    @apply badge bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400;
   }
 
   .badge-warning {
-    @apply badge bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400;
   }
 
   .badge-info {
-    @apply badge bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400;
   }
 
   .input {
@@ -191,5 +206,3 @@
 .chart-clickable {
   cursor: pointer;
 }
-
-

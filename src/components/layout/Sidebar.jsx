@@ -101,7 +101,7 @@ export default function Sidebar({ mobileOpen, onMobileToggle }) {
             <div className="relative px-3.5 py-3 text-center">
               <div className="flex items-center justify-center gap-2 mb-1.5">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-500/10 dark:bg-brand-400/15 text-[10px] font-mono font-semibold tracking-wide text-brand-600 dark:text-brand-400">
-                  v2.1.5
+                  v2.2.0
                 </span>
                 <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600" />
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">成本总表</span>
@@ -160,7 +160,7 @@ export default function Sidebar({ mobileOpen, onMobileToggle }) {
             <div className="relative px-3.5 py-3 text-center">
               <div className="flex items-center justify-center gap-2 mb-1.5">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand-500/10 dark:bg-brand-400/15 text-[10px] font-mono font-semibold tracking-wide text-brand-600 dark:text-brand-400">
-                  v2.1.5
+                  v2.2.0
                 </span>
                 <span className="w-1 h-1 rounded-full bg-slate-400 dark:bg-slate-600" />
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">成本总表</span>

@@ -116,7 +116,7 @@ export default function Dashboard() {
             <span className="text-xs text-slate-500 dark:text-slate-400">点击条形查看详情</span>
           </div>
           <div className="h-[280px] md:h-[320px] lg:h-[360px]">
-            <ProfitRateChart data={branches} onBranchClick={handleBranchClick} />
+            <ProfitRateChart data={branches} onBranchClick={handleBranchClick} riskThreshold={riskThreshold} />
           </div>
         </div>
         <div className="card p-4 md:p-5">
