@@ -131,22 +131,28 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <div className="card p-4 md:p-5">
+        <div className="card p-4 md:p-5 flex flex-col">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">收款率</h3>
-          <div className="h-[280px] md:h-[300px] lg:h-[320px]">
-            <CollectionChart data={branches} />
+          <div className="flex-1 flex items-center">
+            <div className="h-[280px] md:h-[300px] lg:h-[320px] w-full">
+              <CollectionChart data={branches} />
+            </div>
           </div>
         </div>
-        <div className="card p-4 md:p-5">
+        <div className="card p-4 md:p-5 flex flex-col">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">综合评价</h3>
-          <div className="h-[280px] md:h-[300px] lg:h-[320px]">
-            <ConfirmRateChart data={branches} />
+          <div className="flex-1 flex items-center">
+            <div className="h-[280px] md:h-[300px] lg:h-[320px] w-full">
+              <ConfirmRateChart data={branches} />
+            </div>
           </div>
         </div>
-        <div className="card p-4 md:p-5">
+        <div className="card p-4 md:p-5 flex flex-col">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">产值与经费</h3>
-          <div className="h-[280px] md:h-[300px] lg:h-[320px]">
-            <ExpenseChart data={branches} />
+          <div className="flex-1 flex items-center">
+            <div className="h-[280px] md:h-[300px] lg:h-[320px] w-full">
+              <ExpenseChart data={branches} />
+            </div>
           </div>
         </div>
         {profitRateRanking.length > 0 && (
