@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = __dirname;
 const DIST_PORTABLE = path.resolve(ROOT, 'dist-portable');
 
-const NODE_VERSION = 'v20.18.0';
+const NODE_VERSION = 'v24.15.0';
 
 const ALL_PLATFORMS = [
   { name: 'win-x64', url: `https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-win-x64.zip`, ext: '.zip', dir: `node-${NODE_VERSION}-win-x64` },

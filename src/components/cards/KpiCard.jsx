@@ -45,8 +45,8 @@ export default function KpiCard({ title, value, unit, trend, type = 'default', p
           <p className="text-[10px] lg:text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 lg:mb-2">
             {title}
           </p>
-          <div className="flex items-baseline gap-1 min-w-0">
-            <span className={clsx('font-display font-bold tracking-tight min-w-0 shrink', sizeClass, valueColorMap[type])}>
+          <div className="flex items-baseline gap-1 flex-wrap min-w-0">
+            <span className={clsx('font-display font-bold tracking-tight', sizeClass, valueColorMap[type])}>
               {displayValue}
             </span>
             {unit && !isPercent && (

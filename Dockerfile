@@ -1,16 +1,16 @@
-FROM node:20-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY vite.config.js tailwind.config.js postcss.config.js index.html ./
+COPY vite.config.js postcss.config.js index.html ./
 COPY src/ src/
 
 RUN npm run build:frontend
 
-FROM node:20-alpine AS backend-builder
+FROM node:24-alpine AS backend-builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY build-server.js ./
 
 RUN node build-server.js
 
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 
 RUN apk add --no-cache nginx
 

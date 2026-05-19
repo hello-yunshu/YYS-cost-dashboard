@@ -10,7 +10,7 @@ esbuild.build({
   bundle: true,
   platform: 'node',
   format: 'esm',
-  target: 'node20',
+  target: 'node24',
   outfile: path.resolve(__dirname, 'dist-portable/app/server.bundle.js'),
   external: ['better-sqlite3'],
   minify: false,
