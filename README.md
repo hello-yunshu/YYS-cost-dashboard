@@ -148,8 +148,8 @@ npm run build:portable
 推送 tag 即可自动构建并发布 Release：
 
 ```bash
-git tag v2.2.0
-git push origin v2.2.0
+git tag v1.2.3
+git push origin v1.2.3
 ```
 
 工作流会并行构建 Windows ZIP、macOS DMG、Android APK，并自动创建 GitHub Release。
