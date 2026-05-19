@@ -14,7 +14,7 @@ export default function errorHandler(err, req, res, _next) {
     });
   }
 
-  const status = err.status || 500;
+  const status = err.statusCode || 500;
   const message = status === 500 ? '服务器内部错误' : err.message;
 
   res.status(status).json({

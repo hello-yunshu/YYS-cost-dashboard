@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import useDashboardStore from '../../stores/useDashboardStore';
 import useSettingsStore from '../../stores/useSettingsStore';
 import Loading from '../../components/common/Loading';
@@ -10,7 +10,6 @@ import CostTable from '../../components/tables/CostTable';
 
 export default function BranchView() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { branchDetail, selectedMonth, loading, fetchBranchDetail } = useDashboardStore();
   const { getRiskThreshold } = useSettingsStore();
   const riskThreshold = getRiskThreshold();

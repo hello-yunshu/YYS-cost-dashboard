@@ -4,7 +4,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor } from '../../utils/constants';
 
 export default function CostCompositionChart({ monthlyData = [], selectedMonth }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
   const [vw, setVw] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 0);
 
@@ -40,10 +40,10 @@ export default function CostCompositionChart({ monthlyData = [], selectedMonth }
       return text.length > 10 ? text.slice(0, 10) + '...' : text;
     };
 
-    const baseTextStyle = { color: isDark ? '#94a3b8' : '#64748b', fontSize: 11 };
+    const baseTextStyle = { color: '#64748b', fontSize: 11 };
 
     const scrollIconColor = isDark ? '#475569' : '#64748b';
-    const scrollInactiveColor = isDark ? '#1e293b' : '#cbd5e1';
+    const scrollInactiveColor = isDark ? '#334155' : '#cbd5e1';
 
     let pieCenter, pieRadius, legendConfig;
 
@@ -122,7 +122,7 @@ export default function CostCompositionChart({ monthlyData = [], selectedMonth }
             formatter: '{b}\n{d}%',
             fontSize: 10,
             lineHeight: 14,
-            color: isDark ? '#94a3b8' : '#64748b',
+            color: '#64748b',
           },
           labelLine: {
             show: isTiny,

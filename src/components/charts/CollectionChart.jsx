@@ -3,7 +3,7 @@ import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor } from '../../utils/constants';
 
 export default function CollectionChart({ data = [] }) {
-  const { resolvedTheme } = useThemeStore();
+  const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
   const isDark = resolvedTheme === 'dark';
 
   const items = useMemo(() => {
@@ -36,7 +36,7 @@ export default function CollectionChart({ data = [] }) {
                 cy="40"
                 r="36"
                 fill="none"
-                stroke={isDark ? '#334155' : '#cbd5e1'}
+                stroke={isDark ? '#475569' : '#cbd5e1'}
                 strokeWidth="6"
               />
               <circle
@@ -63,7 +63,7 @@ export default function CollectionChart({ data = [] }) {
           </div>
           <span
             className="mt-1.5 text-xs text-center leading-tight max-w-[80px] truncate"
-            style={{ color: isDark ? '#94a3b8' : '#64748b' }}
+            style={{ color: '#64748b' }}
           >
             {item.name}
           </span>

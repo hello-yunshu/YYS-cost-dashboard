@@ -43,7 +43,7 @@ export default function RiskProjectCard({ project, onClick, riskThreshold = 0.05
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             {isHighRisk && (
-              <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             )}
@@ -57,7 +57,7 @@ export default function RiskProjectCard({ project, onClick, riskThreshold = 0.05
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border', config.className)}>
             <span className={clsx('w-1.5 h-1.5 rounded-full', config.dotClass)} />
             {config.label}
