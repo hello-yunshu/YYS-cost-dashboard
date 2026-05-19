@@ -239,7 +239,7 @@ jobs:
           echo "  OK: valid zip archive"
           AAPT="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)/aapt"
           BADGING=$($AAPT dump badging "$APK_FILE" 2>/dev/null)
-          PKG=$(echo "$BADGING" | head -1 | grep -oP "name='\K[^']+")
+          PKG=$(echo "$BADGING" | head -1 | grep -oP "name='\K[^']+" | head -1)
           VNAME=$(echo "$BADGING" | head -1 | grep -oP "versionName='\K[^']+")
           VCODE=$(echo "$BADGING" | head -1 | grep -oP "versionCode='\K[^']+")
           echo "  Package: $PKG"
