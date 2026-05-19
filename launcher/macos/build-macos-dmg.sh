@@ -37,9 +37,9 @@ fi
 
 echo ""
 echo "[Step 1/5] Preparing DMG staging directory..."
+rm -rf "$DMG_DIR"
+mkdir -p "$DMG_DIR"
 STAGING_DIR="$DMG_DIR/staging"
-rm -rf "$STAGING_DIR"
-mkdir -p "$STAGING_DIR"
 
 echo "[Step 2/5] Copying app bundle..."
 cp -R "$APP_BUNDLE" "$STAGING_DIR/"
@@ -82,8 +82,6 @@ fi
 ln -sf /Applications "$STAGING_DIR/Applications"
 
 echo "[Step 4/5] Creating DMG image..."
-rm -f "$DMG_OUTPUT"
-mkdir -p "$DMG_DIR"
 
 hdiutil create \
     -volname "Cost Dashboard" \
