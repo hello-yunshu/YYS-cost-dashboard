@@ -236,9 +236,26 @@ jobs:
           if [ "$APK_SIZE" -lt 10 ]; then echo "::error::APK too small ($APK_SIZE MB), expected >10 MB" && exit 1; fi
           if [ "$APK_SIZE" -gt 100 ]; then echo "::error::APK too large ($APK_SIZE MB), expected <100 MB" && exit 1; fi
           if ! unzip -t "$APK_FILE" > /dev/null 2>&1; then echo "::error::APK is not a valid zip archive" && exit 1; fi
-          if ! unzip -l "$APK_FILE" | grep -q "AndroidManifest.xml"; then echo "::error::APK missing AndroidManifest.xml" && exit 1; fi
-          if ! unzip -l "$APK_FILE" | grep -q "classes.dex"; then echo "::error::APK missing classes.dex" && exit 1; fi
-          echo "  OK: valid zip with AndroidManifest.xml and classes.dex"
+          echo "  OK: valid zip archive"
+          AAPT="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools/ | sort -V | tail -1)/aapt"
+          BADGING=$($AAPT dump badging "$APK_FILE" 2>/dev/null)
+          PKG=$(echo "$BADGING" | head -1 | grep -oP "name='\K[^']+")
+          VNAME=$(echo "$BADGING" | head -1 | grep -oP "versionName='\K[^']+")
+          VCODE=$(echo "$BADGING" | head -1 | grep -oP "versionCode='\K[^']+")
+          echo "  Package: $PKG"
+          echo "  Version: $VNAME (code: $VCODE)"
+          if [ "$PKG" != "com.yunshu.costdashboard" ]; then echo "::error::Unexpected package name: $PKG" && exit 1; fi
+          EXPECTED_VERSION=$(node -e "console.log(require('./package.json').version)")
+          if [ "$VNAME" != "$EXPECTED_VERSION" ]; then echo "::error::Version mismatch: APK=$VNAME, expected=$EXPECTED_VERSION" && exit 1; fi
+          echo "  OK: package name and version correct"
+          ASSETS=$($AAPT list "$APK_FILE" 2>/dev/null)
+          for f in "assets/public/index.html" "classes.dex" "AndroidManifest.xml"; do
+            if echo "$ASSETS" | grep -q "$f"; then
+              echo "  OK: $f"
+            else
+              echo "::error::Missing in APK: $f" && exit 1
+            fi
+          done
           echo "Android build verification passed"
 
       - uses: actions/upload-artifact@v7
