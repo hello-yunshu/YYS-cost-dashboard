@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import useDashboardStore from '../../stores/useDashboardStore';
+import useSettingsStore from '../../stores/useSettingsStore';
 import { generateMonthlyReport, generateAnnualReport } from '../../utils/reportGenerator';
 
 const STEPS = [
@@ -17,6 +18,7 @@ export default function ExportReport({ isAnnualPage }) {
   const [error, setError] = useState(null);
 
   const { overview, selectedMonth, annualData, selectedYear } = useDashboardStore();
+  const riskThreshold = useSettingsStore((s) => s.settings.riskThreshold / 100);
 
   const handleExport = useCallback(async () => {
     setLoading(true);
@@ -31,13 +33,13 @@ export default function ExportReport({ isAnnualPage }) {
           throw new Error('暂无年度数据，请先选择年份并等待数据加载');
         }
         setProgress(1);
-        await generateAnnualReport(annualData, selectedYear);
+        await generateAnnualReport(annualData, selectedYear, riskThreshold);
       } else {
         if (!overview) {
           throw new Error('暂无月度数据，请先选择月份并等待数据加载');
         }
         setProgress(1);
-        await generateMonthlyReport(overview, selectedMonth);
+        await generateMonthlyReport(overview, selectedMonth, riskThreshold);
       }
 
       setProgress(3);
@@ -49,7 +51,7 @@ export default function ExportReport({ isAnnualPage }) {
       setLoading(false);
       setProgress(0);
     }
-  }, [isAnnualPage, overview, selectedMonth, annualData, selectedYear]);
+  }, [isAnnualPage, overview, selectedMonth, annualData, selectedYear, riskThreshold]);
 
   const reportType = isAnnualPage ? '年度报告' : '月度报告';
   const timeLabel = isAnnualPage ? `${selectedYear} 年` : (selectedMonth || '全量');

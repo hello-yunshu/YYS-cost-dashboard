@@ -858,7 +858,7 @@ export function getBranchRadarOption(monthlyData) {
   };
 }
 
-export function getBranchScatterOption(monthlyData) {
+export function getBranchScatterOption(monthlyData, riskThreshold = 0.05) {
   if (!monthlyData || monthlyData.length === 0) return null;
 
   const latest = monthlyData[monthlyData.length - 1];
@@ -882,9 +882,9 @@ export function getBranchScatterOption(monthlyData) {
     },
   }));
 
-  const maxRevenue = Math.max(...branches.map((b) => b.selfOperatedValue || 0), 1);
+  const maxCost = Math.max(...branches.map((b) => b.actualCost || 0), 1);
   const symbolSizeFunc = (val) => {
-    const ratio = (val[2] || 0) / maxRevenue;
+    const ratio = (val[2] || 0) / maxCost;
     return Math.max(10, Math.min(40, ratio * 50 + 10));
   };
 
@@ -962,9 +962,9 @@ export function getBranchScatterOption(monthlyData) {
           lineStyle: { color: '#94a3b8', type: 'dashed', width: 1 },
           data: [
             {
-              yAxis: 5,
+              yAxis: riskThreshold * 100,
               label: {
-                formatter: '风险线 5%',
+                formatter: `风险线 ${(riskThreshold * 100).toFixed(0)}%`,
                 position: 'insideStartTop',
                 color: '#64748b',
                 fontSize: 10,

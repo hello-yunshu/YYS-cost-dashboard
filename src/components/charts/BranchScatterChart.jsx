@@ -3,7 +3,7 @@ import ReactECharts from 'echarts-for-react';
 import useThemeStore from '../../stores/useThemeStore';
 import { getBranchColor, getBranchColorLight } from '../../utils/constants';
 
-export default function BranchScatterChart({ monthlyData = [] }) {
+export default function BranchScatterChart({ monthlyData = [], riskThreshold = 0.05 }) {
   const { resolvedTheme } = useThemeStore();
   const isDark = resolvedTheme === 'dark';
 
@@ -143,9 +143,9 @@ export default function BranchScatterChart({ monthlyData = [] }) {
             lineStyle: { color: isDark ? '#475569' : '#cbd5e1', type: 'dashed', width: 1 },
             data: [
               {
-                yAxis: 5,
+                yAxis: riskThreshold * 100,
                 label: {
-                  formatter: '风险线 5%',
+                  formatter: `风险线 ${(riskThreshold * 100).toFixed(0)}%`,
                   position: 'insideStartTop',
                   color: isDark ? '#94a3b8' : '#64748b',
                   fontSize: 10,
@@ -156,7 +156,7 @@ export default function BranchScatterChart({ monthlyData = [] }) {
         },
       ],
     };
-  }, [monthlyData, isDark]);
+  }, [monthlyData, isDark, riskThreshold]);
 
   return (
     <div className="chart-container">
