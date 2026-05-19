@@ -1,0 +1,26 @@
+services:
+  cost-dashboard:
+    build: .
+    container_name: mtc-cost-dashboard
+    ports:
+      - "${HOST_PORT:-8369}:8080"
+    environment:
+      - NODE_ENV=production
+      - DB_MODE=sqljs
+      - DB_PATH=/app/data/cost_dashboard.db
+      - PORT=3113
+      - TZ=Asia/Shanghai
+    volumes:
+      - cost-dashboard-data:/app/data
+      - cost-dashboard-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3113/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  cost-dashboard-data:
+  cost-dashboard-uploads:
