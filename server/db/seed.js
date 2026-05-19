@@ -10,6 +10,10 @@ const SAMPLE_PROJECTS = {
     { name: '万象输变电线路项目', is_online: 1 },
     { name: '琅勃拉邦水电站项目', is_online: 1 },
   ],
+  '中东公司': [
+    { name: '迪拜商业综合体项目', is_online: 1 },
+    { name: '利雅得基础设施建设项目', is_online: 1 },
+  ],
   '大洋洲公司': [
     { name: '悉尼商业中心幕墙项目', is_online: 1 },
     { name: '墨尔本基础设施项目', is_online: 1 },
@@ -29,10 +33,16 @@ const SAMPLE_PROJECTS = {
     { name: '商业综合体精装修工程', is_online: 1 },
     { name: '写字楼公共区域装饰', is_online: 0 },
   ],
+  '其他公司': [
+    { name: '香港写字楼改造项目', is_online: 1 },
+  ],
 };
 
-function generateCostData(projectName, branchName) {
-  const seed = projectName.length + branchName.length;
+function generateCostData(projectName, branchName, month) {
+  let seed = 0;
+  for (const c of projectName + branchName + month) {
+    seed += c.charCodeAt(0);
+  }
   const rand = (min, max) => {
     const x = Math.sin(seed * 9301 + min * 49297 + max * 233) * 10000;
     return Math.round((x - Math.floor(x)) * (max - min) + min);
@@ -75,9 +85,9 @@ function generateCostData(projectName, branchName) {
     standard_cost_general: standardCostGeneral,
     standard_cost_self: standardCostSelf,
     bid_profit_rate: Math.round(bidProfitRate * 10000) / 10000,
-    price_diff_rate: Math.round(rand(2, 8) / 10000),
-    baseline_benefit_rate: Math.round(rand(5, 15) / 10000),
-    responsibility_profit_rate: Math.round(rand(8, 20) / 10000),
+    price_diff_rate: rand(2, 8) / 100,
+    baseline_benefit_rate: rand(5, 15) / 100,
+    responsibility_profit_rate: rand(8, 20) / 100,
     owner_confirmed_value: ownerConfirmedValue,
     actual_value: actualValue,
     actual_cost: actualCost,
@@ -134,7 +144,7 @@ export async function seedData() {
       if (!projectId) continue;
 
       for (const month of months) {
-        const costData = generateCostData(proj.name, branchName);
+        const costData = generateCostData(proj.name, branchName, month);
         const fields = Object.keys(costData);
         const values = Object.values(costData);
         const placeholders = fields.map(() => '?').join(', ');
