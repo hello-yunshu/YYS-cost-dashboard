@@ -151,8 +151,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             try? fm.removeItem(atPath: path)
         }
 
-        if let appBundlePath = Bundle.main.bundlePath,
-           appBundlePath.hasSuffix(".app") {
+        let appBundlePath = Bundle.main.bundlePath
+        if appBundlePath.hasSuffix(".app") {
             let script = "sleep 1; rm -rf '\(appBundlePath)'; rm -rf '\(supportDir)'"
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/bin/bash")
