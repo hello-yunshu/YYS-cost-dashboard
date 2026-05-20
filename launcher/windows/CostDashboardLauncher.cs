@@ -512,7 +512,7 @@ namespace CostDashboardLauncher
 
             string appDataDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                AppDataName);
+                Program.AppDataName);
 
             if (Program.IsStandaloneMode())
             {
