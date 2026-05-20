@@ -18,7 +18,7 @@ namespace CostDashboardLauncher
         private const string MutexName = "CostDashboardLauncher.Portable";
         internal static readonly string Version = "__VERSION__";
         private const string StandaloneMagic = "CDSE";
-        private const string AppDataName = "Cost Dashboard";
+        internal const string AppDataName = "Cost Dashboard";
 
         [STAThread]
         private static int Main()
