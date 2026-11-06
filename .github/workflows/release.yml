@@ -353,6 +353,9 @@ jobs:
 
   release:
     needs: [build-windows, build-macos, build-linux, build-android]
+    # 发布门禁：release 只允许手动 workflow_dispatch 触发。
+    # push（任意分支，含 main）只做构建验证，绝不自动打 tag / 发 Release。
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
